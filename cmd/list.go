@@ -20,6 +20,7 @@ var (
 	listName          string
 	listPaymentMethod string
 	listCategory      string
+	listLimit         int
 )
 
 // amountFilter holds parsed amount filter criteria
@@ -51,6 +52,7 @@ Examples:
 	cmd.Flags().StringVarP(&listName, "name", "n", "", "Filter by name (case-insensitive, contains)")
 	cmd.Flags().StringVarP(&listPaymentMethod, "method", "m", "", "Filter by payment method")
 	cmd.Flags().StringVarP(&listCategory, "category", "c", "", "Filter by category")
+	cmd.Flags().IntVarP(&listLimit, "limit", "l", 0, "Limit number of results (0 = no limit)")
 
 	return cmd
 }
@@ -269,6 +271,11 @@ func printBillsTable(cmd *cobra.Command, project *api.Project, bills []api.BillR
 		}
 		return bills[i].Timestamp > bills[j].Timestamp
 	})
+
+	// Apply limit if set
+	if listLimit > 0 && len(bills) > listLimit {
+		bills = bills[:listLimit]
+	}
 
 	// Build lookup maps for names
 	memberNames := make(map[int]string)
