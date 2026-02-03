@@ -131,42 +131,62 @@ func Load() (*Config, error) {
 	return &cfg, nil
 }
 
-// Save writes configuration to a file in the specified format
+// Save writes configuration to a file in the specified format in the default config directory
 func Save(cfg *Config, format string) (string, error) {
 	configDir := GetConfigDir()
 	if err := os.MkdirAll(configDir, 0700); err != nil {
 		return "", fmt.Errorf("creating config directory: %w", err)
 	}
 
-	var data []byte
 	var ext string
-	var err error
-
 	switch format {
 	case "json":
 		ext = ".json"
-		data, err = json.MarshalIndent(cfg, "", "  ")
-		if err != nil {
-			return "", fmt.Errorf("encoding JSON: %w", err)
-		}
-		data = append(data, '\n')
 	case "yaml", "yml":
 		ext = ".yaml"
-		data, err = yaml.Marshal(cfg)
-		if err != nil {
-			return "", fmt.Errorf("encoding YAML: %w", err)
-		}
 	case "toml":
 		ext = ".toml"
-		data, err = tomlMarshal(cfg)
-		if err != nil {
-			return "", fmt.Errorf("encoding TOML: %w", err)
-		}
 	default:
 		return "", fmt.Errorf("unsupported format: %s", format)
 	}
 
 	path := filepath.Join(configDir, appName+ext)
+	return SaveToPath(cfg, path)
+}
+
+// SaveToPath writes configuration to a specific file path (format determined by extension)
+func SaveToPath(cfg *Config, path string) (string, error) {
+	// Ensure parent directory exists
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return "", fmt.Errorf("creating config directory: %w", err)
+	}
+
+	var data []byte
+	var err error
+	ext := filepath.Ext(path)
+
+	switch ext {
+	case ".json":
+		data, err = json.MarshalIndent(cfg, "", "  ")
+		if err != nil {
+			return "", fmt.Errorf("encoding JSON: %w", err)
+		}
+		data = append(data, '\n')
+	case ".yaml", ".yml":
+		data, err = yaml.Marshal(cfg)
+		if err != nil {
+			return "", fmt.Errorf("encoding YAML: %w", err)
+		}
+	case ".toml":
+		data, err = tomlMarshal(cfg)
+		if err != nil {
+			return "", fmt.Errorf("encoding TOML: %w", err)
+		}
+	default:
+		return "", fmt.Errorf("unsupported config format: %s", ext)
+	}
+
 	if err := os.WriteFile(path, data, 0600); err != nil {
 		return "", fmt.Errorf("writing config file: %w", err)
 	}

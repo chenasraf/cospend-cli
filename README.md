@@ -20,6 +20,7 @@ add and list expenses directly from your terminal without opening the web interf
 - **Currency code support** (e.g., `usd`, `eur`, `gbp`) with automatic symbol resolution
 - **Local caching** of project data with 1-hour TTL for faster subsequent calls
 - **Global project flag** - set `-p` before the command for easy shell aliases
+- **Secure browser login** - OAuth-style authentication with 2FA support
 - Cross-platform support: **macOS**, **Linux**, and **Windows**
 
 ---
@@ -57,7 +58,19 @@ Run the interactive setup wizard:
 cospend init
 ```
 
-This will prompt for your Nextcloud credentials and save them to a config file.
+This will prompt for your Nextcloud domain and let you choose an authentication method using an
+interactive selector (use arrow keys or j/k to navigate, Enter to select):
+
+```
+Choose login method:
+  > Browser login (recommended) - Opens browser for secure authentication
+    Password/App token - Enter credentials manually
+```
+
+- **Browser login (recommended)** - Opens your browser for secure OAuth-style authentication.
+  Handles 2FA automatically and generates an app-specific password.
+
+- **Password/App token** - Enter your credentials manually (useful for headless servers).
 
 You can specify the config format with `--format`:
 
