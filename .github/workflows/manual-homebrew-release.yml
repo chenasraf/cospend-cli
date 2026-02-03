@@ -1,0 +1,12 @@
+name: Manual Homebrew Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  homebrew:
+    uses: chenasraf/workflows/.github/workflows/manual-homebrew-release.yml@master
+    with:
+      homebrew-tap-repo: chenasraf/homebrew-tap
+    secrets:
+      REPO_DISPATCH_PAT: ${{ secrets.REPO_DISPATCH_PAT }}
