@@ -295,7 +295,9 @@ func printBillsTable(cmd *cobra.Command, project *api.Project, bills []api.BillR
 
 	table := NewTable("ID", "DATE", "NAME", "AMOUNT", "PAID BY", "PAID FOR", "CATEGORY", "METHOD")
 
+	var totalAmount float64
 	for _, bill := range bills {
+		totalAmount += bill.Amount
 		// Get payer name
 		payerName := memberNames[bill.PayerID]
 		if payerName == "" {
@@ -351,5 +353,5 @@ func printBillsTable(cmd *cobra.Command, project *api.Project, bills []api.BillR
 
 	out := cmd.OutOrStdout()
 	table.Render(out)
-	_, _ = fmt.Fprintf(out, "\nTotal: %d bill(s)\n", len(bills))
+	_, _ = fmt.Fprintf(out, "\nTotal: %d bill(s), %.2f\n", len(bills), totalAmount)
 }
