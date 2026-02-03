@@ -12,12 +12,14 @@ add and list expenses directly from your terminal without opening the web interf
 
 ## Features
 
-- **Add** and **list** expenses in Cospend projects via the **REST API**
+- **Add**, **list**, and **delete** expenses in Cospend projects via the **REST API**
+- **List projects** you have access to
 - **Filter** expenses by payer, owed members, amount, name, category, or payment method
 - Resolve categories, payment methods, and members by **name or ID**
 - **Case-insensitive** matching for all lookups
 - **Currency code support** (e.g., `usd`, `eur`, `gbp`) with automatic symbol resolution
 - **Local caching** of project data with 1-hour TTL for faster subsequent calls
+- **Global project flag** - set `-p` before the command for easy shell aliases
 - Cross-platform support: **macOS**, **Linux**, and **Windows**
 
 ---
@@ -121,6 +123,24 @@ export NEXTCLOUD_PASSWORD="your-app-password"
 
 ## Usage
 
+### Global Flags
+
+The `-p`/`--project` flag can be used before or after the command, making it easy to create shell
+aliases:
+
+```bash
+# These are equivalent:
+cospend add "Groceries" 25.50 -p myproject
+cospend -p myproject add "Groceries" 25.50
+
+# Create an alias for a specific project:
+alias cospend-home="cospend -p homeproject"
+cospend-home add "Groceries" 25.50
+cospend-home list
+```
+
+---
+
 ### Adding Expenses
 
 ```bash
@@ -193,16 +213,17 @@ cospend list -p myproject -b alice -c restaurant --amount ">=20"
 
 #### List Command Flags
 
-| Short | Long         | Description                                         |
-| ----- | ------------ | --------------------------------------------------- |
-| `-p`  | `--project`  | Project ID (required)                               |
-| `-b`  | `--by`       | Filter by paying member username                    |
-| `-f`  | `--for`      | Filter by owed member username (repeatable)         |
+| Short | Long         | Description                                          |
+| ----- | ------------ | ---------------------------------------------------- |
+| `-p`  | `--project`  | Project ID (required)                                |
+| `-b`  | `--by`       | Filter by paying member username                     |
+| `-f`  | `--for`      | Filter by owed member username (repeatable)          |
 | `-a`  | `--amount`   | Filter by amount (e.g., `50`, `>30`, `<=100`, `=25`) |
-| `-n`  | `--name`     | Filter by name (case-insensitive, contains)         |
-| `-c`  | `--category` | Filter by category name or ID                       |
-| `-m`  | `--method`   | Filter by payment method name or ID                 |
-| `-h`  | `--help`     | Display help information                            |
+| `-n`  | `--name`     | Filter by name (case-insensitive, contains)          |
+| `-c`  | `--category` | Filter by category name or ID                        |
+| `-m`  | `--method`   | Filter by payment method name or ID                  |
+| `-l`  | `--limit`    | Limit number of results (0 = no limit)               |
+| `-h`  | `--help`     | Display help information                             |
 
 The output includes the bill ID for each expense, which can be used with the delete command.
 
@@ -224,10 +245,36 @@ cospend delete 123 -p myproject
 
 #### Delete Command Flags
 
-| Short | Long        | Description           |
-| ----- | ----------- | --------------------- |
-| `-p`  | `--project` | Project ID (required) |
+| Short | Long        | Description              |
+| ----- | ----------- | ------------------------ |
+| `-p`  | `--project` | Project ID (required)    |
 | `-h`  | `--help`    | Display help information |
+
+---
+
+### Listing Projects
+
+```bash
+cospend projects [flags]
+cospend proj [flags]    # alias
+```
+
+#### Examples
+
+```bash
+# List all active projects
+cospend projects
+
+# Include archived projects
+cospend projects --all
+```
+
+#### Projects Command Flags
+
+| Short | Long     | Description                          |
+| ----- | -------- | ------------------------------------ |
+| `-a`  | `--all`  | Show all projects including archived |
+| `-h`  | `--help` | Display help information             |
 
 ---
 
