@@ -186,8 +186,8 @@ func TestPrintBillsTable(t *testing.T) {
 	if !bytes.Contains([]byte(output), []byte("50.00")) {
 		t.Error("Output should contain amount '50.00'")
 	}
-	if !bytes.Contains([]byte(output), []byte("Total: 1 bill(s)")) {
-		t.Error("Output should contain total count")
+	if !bytes.Contains([]byte(output), []byte("Total: 1 bill(s), 50.00")) {
+		t.Error("Output should contain total count and amount")
 	}
 }
 
