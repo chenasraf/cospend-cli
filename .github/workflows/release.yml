@@ -1,0 +1,20 @@
+name: Release
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    uses: chenasraf/workflows/.github/workflows/go-release.yml@master
+    with:
+      name: cospend-cli
+      homebrew-tap-repo: chenasraf/homebrew-tap
+    secrets:
+      REPO_DISPATCH_PAT: ${{ secrets.REPO_DISPATCH_PAT }}
