@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 	"github.com/adrg/xdg"
@@ -13,6 +14,16 @@ import (
 )
 
 const appName = "cospend"
+
+// NormalizeURL trims trailing slashes and prepends https:// if no scheme is present.
+func NormalizeURL(url string) string {
+	url = strings.TrimRight(url, "/")
+	lower := strings.ToLower(url)
+	if !strings.HasPrefix(lower, "http://") && !strings.HasPrefix(lower, "https://") {
+		url = "https://" + url
+	}
+	return url
+}
 
 // Config holds the Nextcloud configuration
 type Config struct {

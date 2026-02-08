@@ -216,10 +216,7 @@ func (c *Client) debugf(format string, args ...interface{}) {
 }
 
 func (c *Client) doRequest(method, path string, body io.Reader) (*http.Response, error) {
-	baseURL := strings.TrimSuffix(c.config.Domain, "/")
-	if !strings.HasPrefix(baseURL, "http://") && !strings.HasPrefix(baseURL, "https://") {
-		baseURL = "https://" + baseURL
-	}
+	baseURL := config.NormalizeURL(c.config.Domain)
 	fullURL := fmt.Sprintf("%s%s", baseURL, path)
 
 	c.debugf("Request: %s %s", method, fullURL)

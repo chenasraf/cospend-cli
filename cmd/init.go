@@ -76,13 +76,7 @@ func runInit(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
-	domain = strings.TrimRight(domain, "/")
-
-	// Auto-prepend https:// if no scheme provided
-	domainLower := strings.ToLower(domain)
-	if !strings.HasPrefix(domainLower, "http://") && !strings.HasPrefix(domainLower, "https://") {
-		domain = "https://" + domain
-	}
+	domain = config.NormalizeURL(domain)
 
 	// Choose login method
 	_, _ = fmt.Fprintln(cmd.OutOrStdout())

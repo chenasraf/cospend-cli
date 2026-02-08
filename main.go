@@ -26,6 +26,7 @@ func main() {
 	rootCmd.AddCommand(cmd.NewListCommand())
 	rootCmd.AddCommand(cmd.NewDeleteCommand())
 	rootCmd.AddCommand(cmd.NewProjectsCommand())
+	rootCmd.AddCommand(cmd.NewInfoCommand())
 
 	rootCmd.PersistentFlags().BoolVarP(&cmd.Debug, "debug", "d", false, "Enable debug output")
 	rootCmd.PersistentFlags().StringVarP(&cmd.ProjectID, "project", "p", "", "Project ID")

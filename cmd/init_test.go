@@ -262,13 +262,7 @@ func TestDomainAutoPrependHTTPS(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			domain := tt.input
-			domain = strings.TrimRight(domain, "/")
-			domainLower := strings.ToLower(domain)
-			if !strings.HasPrefix(domainLower, "http://") && !strings.HasPrefix(domainLower, "https://") {
-				domain = "https://" + domain
-			}
-
+			domain := config.NormalizeURL(tt.input)
 			if domain != tt.expected {
 				t.Errorf("Domain = %s, want %s", domain, tt.expected)
 			}
