@@ -233,7 +233,7 @@ func TestAddCommandWithAllFlags(t *testing.T) {
 			{ID: 3, Name: "Credit Card"},
 		},
 		Currencies: []api.Currency{
-			{ID: 2, Name: "€"},
+			{ID: 2, Name: "€", ExchangeRate: 0.85},
 		},
 	}
 
@@ -288,11 +288,11 @@ func TestAddCommandWithAllFlags(t *testing.T) {
 	}
 
 	// Verify bill data
-	if receivedBill["what"] != "Dinner" {
+	if receivedBill["what"] != "Dinner (€ 45.00)" {
 		t.Errorf("Wrong what: %s", receivedBill["what"])
 	}
-	if receivedBill["amount"] != "45.00" {
-		t.Errorf("Wrong amount: %s", receivedBill["amount"])
+	if receivedBill["amount"] != "38.25" { // 45.00 * 0.85 exchange rate
+		t.Errorf("Wrong amount: got %s, want 38.25 (45.00 * 0.85)", receivedBill["amount"])
 	}
 	if receivedBill["payer"] != "2" { // Alice's ID
 		t.Errorf("Wrong payer: %s", receivedBill["payer"])

@@ -138,25 +138,6 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		bill.PaymentModeID = methodID
 	}
 
-	// Resolve optional currency
-	if convertTo != "" {
-		currencyID, err := cache.ResolveCurrency(project, convertTo)
-		if err != nil {
-			return fmt.Errorf("resolving currency: %w", err)
-		}
-		bill.OriginalCurrencyID = currencyID
-	}
-
-	// Add optional comment
-	if comment != "" {
-		bill.Comment = comment
-	}
-
-	// Create the bill
-	if err := client.CreateBill(ProjectID, bill); err != nil {
-		return fmt.Errorf("creating bill: %w", err)
-	}
-
 	// Fetch user info for locale-aware formatting
 	locale := "en_US"
 	userInfo, ok := cache.LoadUserInfo()
@@ -172,7 +153,29 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		locale = userInfo.Language
 	}
 
+	// Resolve optional currency and convert amount
+	if convertTo != "" {
+		currency, err := cache.ResolveCurrency(project, convertTo)
+		if err != nil {
+			return fmt.Errorf("resolving currency: %w", err)
+		}
+		bill.OriginalCurrencyID = currency.ID
+		bill.Amount = amount * currency.ExchangeRate
+		origFormatter := format.NewAmountFormatter(locale, currency.Name)
+		bill.What = fmt.Sprintf("%s (%s)", expenseName, origFormatter.Format(amount))
+	}
+
+	// Add optional comment
+	if comment != "" {
+		bill.Comment = comment
+	}
+
+	// Create the bill
+	if err := client.CreateBill(ProjectID, bill); err != nil {
+		return fmt.Errorf("creating bill: %w", err)
+	}
+
 	formatter := format.NewAmountFormatter(locale, project.CurrencyName)
-	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Successfully added expense: %s (%s)\n", expenseName, formatter.Format(amount))
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Successfully added expense: %s (%s)\n", expenseName, formatter.Format(bill.Amount))
 	return nil
 }

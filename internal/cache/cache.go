@@ -346,33 +346,33 @@ func ResolvePaymentMode(project *api.Project, nameOrID string) (int, error) {
 	return 0, fmt.Errorf("payment mode not found: %s", nameOrID)
 }
 
-// ResolveCurrency finds a currency by name (case-insensitive), ID, or currency code symbol and returns the ID
-func ResolveCurrency(project *api.Project, nameOrID string) (int, error) {
+// ResolveCurrency finds a currency by name (case-insensitive), ID, or currency code symbol and returns the currency
+func ResolveCurrency(project *api.Project, nameOrID string) (*api.Currency, error) {
 	// Try parsing as ID first
 	if id, err := strconv.Atoi(nameOrID); err == nil {
-		for _, cur := range project.Currencies {
-			if cur.ID == id {
-				return id, nil
+		for i := range project.Currencies {
+			if project.Currencies[i].ID == id {
+				return &project.Currencies[i], nil
 			}
 		}
 	}
 
 	// Try matching by name (case-insensitive)
 	lowerName := strings.ToLower(nameOrID)
-	for _, cur := range project.Currencies {
-		if strings.ToLower(cur.Name) == lowerName {
-			return cur.ID, nil
+	for i := range project.Currencies {
+		if strings.ToLower(project.Currencies[i].Name) == lowerName {
+			return &project.Currencies[i], nil
 		}
 	}
 
 	// Try matching by currency code symbol (e.g., "usd" -> "$")
 	if symbol, ok := currencyCodeToSymbol[lowerName]; ok {
-		for _, cur := range project.Currencies {
-			if strings.Contains(cur.Name, symbol) {
-				return cur.ID, nil
+		for i := range project.Currencies {
+			if strings.Contains(project.Currencies[i].Name, symbol) {
+				return &project.Currencies[i], nil
 			}
 		}
 	}
 
-	return 0, fmt.Errorf("currency not found: %s", nameOrID)
+	return nil, fmt.Errorf("currency not found: %s", nameOrID)
 }

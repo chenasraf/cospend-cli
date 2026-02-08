@@ -164,13 +164,13 @@ func TestResolveCurrency(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotID, err := ResolveCurrency(project, tt.nameOrID)
+			got, err := ResolveCurrency(project, tt.nameOrID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ResolveCurrency() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if gotID != tt.wantID {
-				t.Errorf("ResolveCurrency() = %v, want %v", gotID, tt.wantID)
+			if err == nil && got.ID != tt.wantID {
+				t.Errorf("ResolveCurrency() ID = %v, want %v", got.ID, tt.wantID)
 			}
 		})
 	}
