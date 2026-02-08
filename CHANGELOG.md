@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/chenasraf/cospend-cli/compare/v1.2.0...v1.2.1) (2026-02-08)
+
+
+### Bug Fixes
+
+* currency conversion ([e55912e](https://github.com/chenasraf/cospend-cli/commit/e55912e25912b9899b53bc5628170df8ade2f04d))
+
 ## [1.2.0](https://github.com/chenasraf/cospend-cli/compare/v1.1.0...v1.2.0) (2026-02-08)
 
 
