@@ -354,8 +354,13 @@ func printBillsTable(cmd *cobra.Command, project *api.Project, bills []api.BillR
 			methodName = "-"
 		}
 
-		// Truncate name if too long
-		name := bill.What
+		// Sanitize and truncate name
+		name := strings.Map(func(r rune) rune {
+			if r == '\n' || r == '\r' || r == '\t' {
+				return ' '
+			}
+			return r
+		}, strings.TrimSpace(bill.What))
 		if len(name) > 30 {
 			name = name[:27] + "..."
 		}
