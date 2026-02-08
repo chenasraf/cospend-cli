@@ -10,6 +10,7 @@ import (
 	"github.com/chenasraf/cospend-cli/internal/api"
 	"github.com/chenasraf/cospend-cli/internal/cache"
 	"github.com/chenasraf/cospend-cli/internal/config"
+	"github.com/chenasraf/cospend-cli/internal/format"
 	"github.com/spf13/cobra"
 )
 
@@ -94,6 +95,25 @@ func runList(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("fetching bills: %w", err)
 	}
 
+	// Fetch user info for locale (with cache, graceful fallback)
+	locale := "en_US"
+	userInfo, ok := cache.LoadUserInfo()
+	if !ok {
+		userInfo, err = client.GetUserInfo()
+		if err != nil {
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to fetch user info: %v\n", err)
+		} else {
+			if err := cache.SaveUserInfo(userInfo); err != nil {
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to cache user info: %v\n", err)
+			}
+		}
+	}
+	if userInfo != nil && userInfo.Locale != "" {
+		locale = userInfo.Locale
+	} else if userInfo != nil && userInfo.Language != "" {
+		locale = userInfo.Language
+	}
+
 	// Build filters
 	filters, err := buildFilters(project)
 	if err != nil {
@@ -104,7 +124,8 @@ func runList(cmd *cobra.Command, _ []string) error {
 	filteredBills := applyFilters(bills, filters)
 
 	// Print table
-	printBillsTable(cmd, project, filteredBills)
+	formatter := format.NewAmountFormatter(locale, project.CurrencyName)
+	printBillsTable(cmd, project, filteredBills, formatter)
 
 	return nil
 }
@@ -258,7 +279,7 @@ func matchAmount(amount float64, af amountFilter) bool {
 	}
 }
 
-func printBillsTable(cmd *cobra.Command, project *api.Project, bills []api.BillResponse) {
+func printBillsTable(cmd *cobra.Command, project *api.Project, bills []api.BillResponse, formatter *format.AmountFormatter) {
 	if len(bills) == 0 {
 		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No bills found.")
 		return
@@ -343,7 +364,7 @@ func printBillsTable(cmd *cobra.Command, project *api.Project, bills []api.BillR
 			fmt.Sprintf("%d", bill.ID),
 			bill.Date,
 			name,
-			fmt.Sprintf("%.2f", bill.Amount),
+			formatter.Format(bill.Amount),
 			payerName,
 			owersStr,
 			catName,
@@ -353,5 +374,5 @@ func printBillsTable(cmd *cobra.Command, project *api.Project, bills []api.BillR
 
 	out := cmd.OutOrStdout()
 	table.Render(out)
-	_, _ = fmt.Fprintf(out, "\nTotal: %d bill(s), %.2f\n", len(bills), totalAmount)
+	_, _ = fmt.Fprintf(out, "\nTotal: %d bill(s), %s\n", len(bills), formatter.Format(totalAmount))
 }

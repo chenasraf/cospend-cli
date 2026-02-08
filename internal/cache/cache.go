@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/adrg/xdg"
@@ -204,6 +205,90 @@ func Save(projectID string, project *api.Project) error {
 	}
 
 	return nil
+}
+
+// CachedUserInfo stores user info data with timestamp
+type CachedUserInfo struct {
+	UserInfo *api.UserInfo `json:"user_info"`
+	CachedAt time.Time     `json:"cached_at"`
+}
+
+// LoadUserInfo retrieves cached user info if it exists and is not expired
+func LoadUserInfo() (*api.UserInfo, bool) {
+	cacheDir := filepath.Join(getCacheHome(), appName)
+	path := filepath.Join(cacheDir, "_userinfo.json")
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, false
+	}
+
+	var cached CachedUserInfo
+	if err := json.Unmarshal(data, &cached); err != nil {
+		return nil, false
+	}
+
+	if time.Since(cached.CachedAt) > cacheTTL {
+		return nil, false
+	}
+
+	return cached.UserInfo, true
+}
+
+// SaveUserInfo stores user info in the cache
+func SaveUserInfo(userInfo *api.UserInfo) error {
+	cacheDir := filepath.Join(getCacheHome(), appName)
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		return fmt.Errorf("creating cache directory: %w", err)
+	}
+	path := filepath.Join(cacheDir, "_userinfo.json")
+
+	cached := CachedUserInfo{
+		UserInfo: userInfo,
+		CachedAt: time.Now(),
+	}
+
+	data, err := json.MarshalIndent(cached, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshaling user info cache: %w", err)
+	}
+
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		return fmt.Errorf("writing user info cache: %w", err)
+	}
+
+	return nil
+}
+
+var (
+	symbolToISOMap  map[string]string
+	symbolToISOOnce sync.Once
+)
+
+// SymbolToISO returns the uppercase ISO currency code for a given symbol.
+// For ambiguous symbols (e.g. "$"), it prefers USD.
+func SymbolToISO(symbol string) string {
+	symbolToISOOnce.Do(func() {
+		// Preferred codes for ambiguous symbols - first match wins
+		preferred := []string{"usd", "cny", "gbp", "eur"}
+		symbolToISOMap = make(map[string]string)
+
+		// First pass: set all mappings (last write wins)
+		for code, sym := range currencyCodeToSymbol {
+			symbolToISOMap[sym] = strings.ToUpper(code)
+		}
+		// Second pass: override with preferred codes for ambiguous symbols
+		for _, code := range preferred {
+			if sym, ok := currencyCodeToSymbol[code]; ok {
+				symbolToISOMap[sym] = strings.ToUpper(code)
+			}
+		}
+	})
+
+	if iso, ok := symbolToISOMap[symbol]; ok {
+		return iso
+	}
+	return ""
 }
 
 // ResolveMember finds a member by username (case-insensitive) and returns their ID

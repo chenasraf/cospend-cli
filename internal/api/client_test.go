@@ -427,6 +427,126 @@ func TestCreateBillWithCurrency(t *testing.T) {
 	}
 }
 
+func TestGetUserInfo(t *testing.T) {
+	tests := []struct {
+		name           string
+		responseStatus int
+		responseBody   any
+		wantErr        bool
+		wantLocale     string
+		wantLanguage   string
+	}{
+		{
+			name:           "successful request",
+			responseStatus: http.StatusOK,
+			responseBody: OCSResponse{
+				OCS: struct {
+					Meta struct {
+						Status     string `json:"status"`
+						StatusCode int    `json:"statuscode"`
+						Message    string `json:"message"`
+					} `json:"meta"`
+					Data json.RawMessage `json:"data"`
+				}{
+					Meta: struct {
+						Status     string `json:"status"`
+						StatusCode int    `json:"statuscode"`
+						Message    string `json:"message"`
+					}{
+						Status:     "ok",
+						StatusCode: 200,
+						Message:    "OK",
+					},
+					Data: mustMarshal(map[string]string{"locale": "he_IL", "language": "he"}),
+				},
+			},
+			wantErr:      false,
+			wantLocale:   "he_IL",
+			wantLanguage: "he",
+		},
+		{
+			name:           "server error",
+			responseStatus: http.StatusInternalServerError,
+			responseBody:   "Internal Server Error",
+			wantErr:        true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != "/ocs/v2.php/cloud/user" {
+					t.Errorf("Wrong path: got %s, want /ocs/v2.php/cloud/user", r.URL.Path)
+				}
+
+				w.WriteHeader(tt.responseStatus)
+				if s, ok := tt.responseBody.(string); ok {
+					_, _ = w.Write([]byte(s))
+				} else {
+					_ = json.NewEncoder(w).Encode(tt.responseBody)
+				}
+			}))
+			defer server.Close()
+
+			cfg := &config.Config{
+				Domain:   server.URL,
+				User:     "testuser",
+				Password: "testpass",
+			}
+			client := NewClient(cfg)
+
+			info, err := client.GetUserInfo()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetUserInfo() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if !tt.wantErr && info != nil {
+				if info.Locale != tt.wantLocale {
+					t.Errorf("GetUserInfo() Locale = %v, want %v", info.Locale, tt.wantLocale)
+				}
+				if info.Language != tt.wantLanguage {
+					t.Errorf("GetUserInfo() Language = %v, want %v", info.Language, tt.wantLanguage)
+				}
+			}
+		})
+	}
+}
+
+func TestProjectCurrencyName(t *testing.T) {
+	projectJSON := `{
+		"id": "test",
+		"name": "Test",
+		"currencyname": "€",
+		"members": [],
+		"currencies": []
+	}`
+
+	var project Project
+	if err := json.Unmarshal([]byte(projectJSON), &project); err != nil {
+		t.Fatalf("Unmarshal error: %v", err)
+	}
+
+	if project.CurrencyName != "€" {
+		t.Errorf("CurrencyName = %q, want %q", project.CurrencyName, "€")
+	}
+
+	// Test round-trip through marshal
+	data, err := json.Marshal(project)
+	if err != nil {
+		t.Fatalf("Marshal error: %v", err)
+	}
+
+	var project2 Project
+	if err := json.Unmarshal(data, &project2); err != nil {
+		t.Fatalf("Unmarshal round-trip error: %v", err)
+	}
+
+	if project2.CurrencyName != "€" {
+		t.Errorf("Round-trip CurrencyName = %q, want %q", project2.CurrencyName, "€")
+	}
+}
+
 func mustMarshal(v any) json.RawMessage {
 	data, err := json.Marshal(v)
 	if err != nil {

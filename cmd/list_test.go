@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/chenasraf/cospend-cli/internal/api"
+	"github.com/chenasraf/cospend-cli/internal/format"
 )
 
 func TestParseAmountFilter(t *testing.T) {
@@ -163,7 +164,8 @@ func TestPrintBillsTable(t *testing.T) {
 	buf := new(bytes.Buffer)
 	cmd.SetOut(buf)
 
-	printBillsTable(cmd, project, bills)
+	formatter := format.NewAmountFormatter("en_US", "USD")
+	printBillsTable(cmd, project, bills, formatter)
 
 	output := buf.String()
 
@@ -183,11 +185,11 @@ func TestPrintBillsTable(t *testing.T) {
 	if !bytes.Contains([]byte(output), []byte("Cash")) {
 		t.Error("Output should contain payment method 'Cash'")
 	}
-	if !bytes.Contains([]byte(output), []byte("50.00")) {
-		t.Error("Output should contain amount '50.00'")
+	if !bytes.Contains([]byte(output), []byte("$ 50.00")) {
+		t.Errorf("Output should contain formatted amount '$ 50.00', got:\n%s", output)
 	}
-	if !bytes.Contains([]byte(output), []byte("Total: 1 bill(s), 50.00")) {
-		t.Error("Output should contain total count and amount")
+	if !bytes.Contains([]byte(output), []byte("Total: 1 bill(s), $ 50.00")) {
+		t.Errorf("Output should contain total with formatted amount, got:\n%s", output)
 	}
 }
 
@@ -201,7 +203,8 @@ func TestPrintBillsTableEmpty(t *testing.T) {
 	buf := new(bytes.Buffer)
 	cmd.SetOut(buf)
 
-	printBillsTable(cmd, project, bills)
+	formatter := format.NewAmountFormatter("en_US", "")
+	printBillsTable(cmd, project, bills, formatter)
 
 	output := buf.String()
 	if !bytes.Contains([]byte(output), []byte("No bills found")) {

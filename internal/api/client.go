@@ -53,6 +53,7 @@ type Currency struct {
 type Project struct {
 	ID           string        `json:"id"`
 	Name         string        `json:"name"`
+	CurrencyName string        `json:"currencyname"`
 	Members      []Member      `json:"members"`
 	Categories   []Category    // custom unmarshal
 	PaymentModes []PaymentMode // custom unmarshal
@@ -73,6 +74,9 @@ func (p *Project) UnmarshalJSON(data []byte) error {
 	}
 	if v, ok := raw["name"]; ok {
 		_ = json.Unmarshal(v, &p.Name)
+	}
+	if v, ok := raw["currencyname"]; ok {
+		_ = json.Unmarshal(v, &p.CurrencyName)
 	}
 	if v, ok := raw["members"]; ok {
 		_ = json.Unmarshal(v, &p.Members)
@@ -96,15 +100,23 @@ func (p *Project) UnmarshalJSON(data []byte) error {
 
 // MarshalJSON custom marshaler for Project
 func (p Project) MarshalJSON() ([]byte, error) {
-	type ProjectAlias struct {
+	return json.Marshal(struct {
 		ID           string        `json:"id"`
 		Name         string        `json:"name"`
+		CurrencyName string        `json:"currencyname"`
 		Members      []Member      `json:"members"`
 		Categories   []Category    `json:"categories"`
 		PaymentModes []PaymentMode `json:"paymentmodes"`
 		Currencies   []Currency    `json:"currencies"`
-	}
-	return json.Marshal(ProjectAlias(p))
+	}{
+		ID:           p.ID,
+		Name:         p.Name,
+		CurrencyName: p.CurrencyName,
+		Members:      p.Members,
+		Categories:   p.Categories,
+		PaymentModes: p.PaymentModes,
+		Currencies:   p.Currencies,
+	})
 }
 
 func parseCategories(data json.RawMessage) []Category {
@@ -205,6 +217,9 @@ func (c *Client) debugf(format string, args ...interface{}) {
 
 func (c *Client) doRequest(method, path string, body io.Reader) (*http.Response, error) {
 	baseURL := strings.TrimSuffix(c.config.Domain, "/")
+	if !strings.HasPrefix(baseURL, "http://") && !strings.HasPrefix(baseURL, "https://") {
+		baseURL = "https://" + baseURL
+	}
 	fullURL := fmt.Sprintf("%s%s", baseURL, path)
 
 	c.debugf("Request: %s %s", method, fullURL)
@@ -409,6 +424,42 @@ func (c *Client) GetBills(projectID string) ([]BillResponse, error) {
 	}
 
 	return billsWrapper.Bills, nil
+}
+
+// UserInfo represents Nextcloud user information
+type UserInfo struct {
+	Locale   string `json:"locale"`
+	Language string `json:"language"`
+}
+
+// GetUserInfo fetches the authenticated user's info from Nextcloud OCS API
+func (c *Client) GetUserInfo() (*UserInfo, error) {
+	resp, err := c.doRequest("GET", "/ocs/v2.php/cloud/user", nil)
+	if err != nil {
+		return nil, fmt.Errorf("fetching user info: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API returned status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var ocsResp OCSResponse
+	if err := json.NewDecoder(resp.Body).Decode(&ocsResp); err != nil {
+		return nil, fmt.Errorf("decoding response: %w", err)
+	}
+
+	if ocsResp.OCS.Meta.StatusCode != 200 {
+		return nil, fmt.Errorf("API error: %s", ocsResp.OCS.Meta.Message)
+	}
+
+	var userInfo UserInfo
+	if err := json.Unmarshal(ocsResp.OCS.Data, &userInfo); err != nil {
+		return nil, fmt.Errorf("decoding user info: %w", err)
+	}
+
+	return &userInfo, nil
 }
 
 // DeleteBill deletes a bill from the project

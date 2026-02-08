@@ -8,6 +8,7 @@ import (
 	"github.com/chenasraf/cospend-cli/internal/api"
 	"github.com/chenasraf/cospend-cli/internal/cache"
 	"github.com/chenasraf/cospend-cli/internal/config"
+	"github.com/chenasraf/cospend-cli/internal/format"
 	"github.com/spf13/cobra"
 )
 
@@ -156,6 +157,22 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("creating bill: %w", err)
 	}
 
-	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Successfully added expense: %s (%.2f)\n", expenseName, amount)
+	// Fetch user info for locale-aware formatting
+	locale := "en_US"
+	userInfo, ok := cache.LoadUserInfo()
+	if !ok {
+		userInfo, err = client.GetUserInfo()
+		if err == nil {
+			_ = cache.SaveUserInfo(userInfo)
+		}
+	}
+	if userInfo != nil && userInfo.Locale != "" {
+		locale = userInfo.Locale
+	} else if userInfo != nil && userInfo.Language != "" {
+		locale = userInfo.Language
+	}
+
+	formatter := format.NewAmountFormatter(locale, project.CurrencyName)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Successfully added expense: %s (%s)\n", expenseName, formatter.Format(amount))
 	return nil
 }

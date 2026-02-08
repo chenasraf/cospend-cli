@@ -163,6 +163,11 @@ func TestAddCommandSuccess(t *testing.T) {
 			return
 		}
 
+		if r.URL.Path == "/ocs/v2.php/cloud/user" {
+			_ = json.NewEncoder(w).Encode(makeOCSResponse(200, map[string]string{"locale": "en_US", "language": "en"}))
+			return
+		}
+
 		if r.URL.Path == "/ocs/v2.php/apps/cospend/api/v1/projects/test-project/bills" {
 			_ = r.ParseForm()
 			receivedBill = make(map[string]string)
@@ -236,6 +241,11 @@ func TestAddCommandWithAllFlags(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/ocs/v2.php/apps/cospend/api/v1/projects/test-project" {
 			_ = json.NewEncoder(w).Encode(makeOCSResponse(200, project))
+			return
+		}
+
+		if r.URL.Path == "/ocs/v2.php/cloud/user" {
+			_ = json.NewEncoder(w).Encode(makeOCSResponse(200, map[string]string{"locale": "en_US", "language": "en"}))
 			return
 		}
 
