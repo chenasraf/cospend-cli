@@ -213,7 +213,7 @@ func TestAddCommandSuccess(t *testing.T) {
 	}
 
 	// Check output
-	if !bytes.Contains(stdout.Bytes(), []byte("Successfully added expense")) {
+	if !bytes.Contains(stdout.Bytes(), []byte("Added expense")) {
 		t.Errorf("Missing success message in output: %s", stdout.String())
 	}
 }

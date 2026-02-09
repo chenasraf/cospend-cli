@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/chenasraf/cospend-cli/internal/api"
@@ -84,6 +85,12 @@ func runAdd(cmd *cobra.Command, args []string) error {
 			// Non-fatal: log warning but continue
 			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to cache project: %v\n", err)
 		}
+	}
+
+	// Build member name lookup
+	memberNames := make(map[int]string)
+	for _, m := range project.Members {
+		memberNames[m.ID] = m.Name
 	}
 
 	// Resolve payer
@@ -176,6 +183,37 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	}
 
 	formatter := format.NewAmountFormatter(locale, project.CurrencyName)
-	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Successfully added expense: %s (%s)\n", expenseName, formatter.Format(bill.Amount))
+	out := cmd.OutOrStdout()
+	_, _ = fmt.Fprintf(out, "Added expense: %s\n", expenseName)
+	_, _ = fmt.Fprintf(out, "  Amount:   %s\n", formatter.Format(bill.Amount))
+	if convertTo != "" {
+		origFormatter := format.NewAmountFormatter(locale, convertTo)
+		_, _ = fmt.Fprintf(out, "  Original: %s\n", origFormatter.Format(amount))
+	}
+	_, _ = fmt.Fprintf(out, "  Paid by:  %s\n", memberNames[payerID])
+	var owerNames []string
+	for _, id := range owedIDs {
+		owerNames = append(owerNames, memberNames[id])
+	}
+	_, _ = fmt.Fprintf(out, "  Paid for: %s\n", strings.Join(owerNames, ", "))
+	if bill.CategoryID != 0 {
+		for _, c := range project.Categories {
+			if c.ID == bill.CategoryID {
+				_, _ = fmt.Fprintf(out, "  Category: %s\n", c.Name)
+				break
+			}
+		}
+	}
+	if bill.PaymentModeID != 0 {
+		for _, pm := range project.PaymentModes {
+			if pm.ID == bill.PaymentModeID {
+				_, _ = fmt.Fprintf(out, "  Method:   %s\n", pm.Name)
+				break
+			}
+		}
+	}
+	if bill.Comment != "" {
+		_, _ = fmt.Fprintf(out, "  Comment:  %s\n", bill.Comment)
+	}
 	return nil
 }
