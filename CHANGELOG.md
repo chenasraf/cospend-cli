@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.0](https://github.com/chenasraf/cospend-cli/compare/v1.2.1...v1.3.0) (2026-02-09)
+
+
+### Features
+
+* project info in info command ([fbb9605](https://github.com/chenasraf/cospend-cli/commit/fbb96057e56d1aa0fbfae645f89cf60269e1f919))
+
+
+### Bug Fixes
+
+* payment method & category matching logic ([b545c80](https://github.com/chenasraf/cospend-cli/commit/b545c803bbeec0425e05089370052eb00796acb6))
+
 ## [1.2.1](https://github.com/chenasraf/cospend-cli/compare/v1.2.0...v1.2.1) (2026-02-08)
 
 
