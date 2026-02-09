@@ -359,10 +359,10 @@ func (c *Client) CreateBill(projectID string, bill Bill) error {
 		data.Set("comment", bill.Comment)
 	}
 	if bill.PaymentModeID != 0 {
-		data.Set("paymentmodeid", strconv.Itoa(bill.PaymentModeID))
+		data.Set("paymentModeId", strconv.Itoa(bill.PaymentModeID))
 	}
 	if bill.CategoryID != 0 {
-		data.Set("categoryid", strconv.Itoa(bill.CategoryID))
+		data.Set("categoryId", strconv.Itoa(bill.CategoryID))
 	}
 	if bill.OriginalCurrencyID != 0 {
 		data.Set("original_currency_id", strconv.Itoa(bill.OriginalCurrencyID))

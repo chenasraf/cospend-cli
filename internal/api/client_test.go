@@ -283,11 +283,11 @@ func TestCreateBill(t *testing.T) {
 				if r.FormValue("comment") != "" {
 					t.Errorf("Comment should be empty: %s", r.FormValue("comment"))
 				}
-				if r.FormValue("paymentmodeid") != "" {
-					t.Errorf("paymentmodeid should be empty: %s", r.FormValue("paymentmodeid"))
+				if r.FormValue("paymentModeId") != "" {
+					t.Errorf("paymentmodeid should be empty: %s", r.FormValue("paymentModeId"))
 				}
-				if r.FormValue("categoryid") != "" {
-					t.Errorf("categoryid should be empty: %s", r.FormValue("categoryid"))
+				if r.FormValue("categoryId") != "" {
+					t.Errorf("categoryid should be empty: %s", r.FormValue("categoryId"))
 				}
 			},
 		},

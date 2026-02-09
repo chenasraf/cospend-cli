@@ -301,11 +301,11 @@ func TestAddCommandWithAllFlags(t *testing.T) {
 	if receivedBill["payedFor"] != "2,3" { // Alice and Bob
 		t.Errorf("Wrong payedFor: %s", receivedBill["payedFor"])
 	}
-	if receivedBill["categoryid"] != "5" {
-		t.Errorf("Wrong categoryid: %s", receivedBill["categoryid"])
+	if receivedBill["categoryId"] != "5" {
+		t.Errorf("Wrong categoryid: %s", receivedBill["categoryId"])
 	}
-	if receivedBill["paymentmodeid"] != "3" {
-		t.Errorf("Wrong paymentmodeid: %s", receivedBill["paymentmodeid"])
+	if receivedBill["paymentModeId"] != "3" {
+		t.Errorf("Wrong paymentmodeid: %s", receivedBill["paymentModeId"])
 	}
 	if receivedBill["comment"] != "Team dinner" {
 		t.Errorf("Wrong comment: %s", receivedBill["comment"])
