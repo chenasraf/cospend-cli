@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.4.0](https://github.com/chenasraf/cospend-cli/compare/v1.3.0...v1.4.0) (2026-02-09)
+
+
+### Features
+
+* display full info when adding expense ([2350186](https://github.com/chenasraf/cospend-cli/commit/2350186eb82a7c98d880f7ba65e42cc9c8d73b63))
+
+
+### Bug Fixes
+
+* payment method & category field names ([1951474](https://github.com/chenasraf/cospend-cli/commit/1951474387077cab53c823f6e3351719568b000e))
+
 ## [1.3.0](https://github.com/chenasraf/cospend-cli/compare/v1.2.1...v1.3.0) (2026-02-09)
 
 
