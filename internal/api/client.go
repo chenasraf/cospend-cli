@@ -32,14 +32,18 @@ type Member struct {
 
 // Category represents a bill category
 type Category struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	ID    int    `json:"id"`
+	Name  string `json:"name"`
+	Icon  string `json:"icon"`
+	Color string `json:"color"`
 }
 
 // PaymentMode represents a payment method
 type PaymentMode struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	ID    int    `json:"id"`
+	Name  string `json:"name"`
+	Icon  string `json:"icon"`
+	Color string `json:"color"`
 }
 
 // Currency represents a currency

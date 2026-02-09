@@ -41,6 +41,7 @@ func resetFlags() {
 	convertTo = ""
 	paymentMethod = ""
 	comment = ""
+	infoCached = false
 }
 
 func setupTestEnv(t *testing.T, domain string) func() {

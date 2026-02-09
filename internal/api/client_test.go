@@ -570,28 +570,52 @@ func TestProjectUnmarshalObjectKeyed(t *testing.T) {
 		t.Fatalf("Unmarshal error: %v", err)
 	}
 
-	// Verify categories have correct IDs from map keys
-	catByName := make(map[string]int)
+	// Verify categories have correct IDs, icons, and colors from map keys
+	catByName := make(map[string]Category)
 	for _, c := range project.Categories {
-		catByName[c.Name] = c.ID
+		catByName[c.Name] = c
 	}
-	if catByName["Food"] != 5 {
-		t.Errorf("Category Food ID = %d, want 5", catByName["Food"])
+	if catByName["Food"].ID != 5 {
+		t.Errorf("Category Food ID = %d, want 5", catByName["Food"].ID)
 	}
-	if catByName["Transport"] != 12 {
-		t.Errorf("Category Transport ID = %d, want 12", catByName["Transport"])
+	if catByName["Food"].Icon != "\U0001F354" {
+		t.Errorf("Category Food Icon = %q, want %q", catByName["Food"].Icon, "\U0001F354")
+	}
+	if catByName["Food"].Color != "#ff0000" {
+		t.Errorf("Category Food Color = %q, want %q", catByName["Food"].Color, "#ff0000")
+	}
+	if catByName["Transport"].ID != 12 {
+		t.Errorf("Category Transport ID = %d, want 12", catByName["Transport"].ID)
+	}
+	if catByName["Transport"].Icon != "\U0001F697" {
+		t.Errorf("Category Transport Icon = %q, want %q", catByName["Transport"].Icon, "\U0001F697")
+	}
+	if catByName["Transport"].Color != "#00ff00" {
+		t.Errorf("Category Transport Color = %q, want %q", catByName["Transport"].Color, "#00ff00")
 	}
 
-	// Verify payment modes have correct IDs from map keys
-	pmByName := make(map[string]int)
+	// Verify payment modes have correct IDs, icons, and colors from map keys
+	pmByName := make(map[string]PaymentMode)
 	for _, pm := range project.PaymentModes {
-		pmByName[pm.Name] = pm.ID
+		pmByName[pm.Name] = pm
 	}
-	if pmByName["Credit Card"] != 3 {
-		t.Errorf("PaymentMode Credit Card ID = %d, want 3", pmByName["Credit Card"])
+	if pmByName["Credit Card"].ID != 3 {
+		t.Errorf("PaymentMode Credit Card ID = %d, want 3", pmByName["Credit Card"].ID)
 	}
-	if pmByName["Cash"] != 7 {
-		t.Errorf("PaymentMode Cash ID = %d, want 7", pmByName["Cash"])
+	if pmByName["Credit Card"].Icon != "\U0001F4B3" {
+		t.Errorf("PaymentMode Credit Card Icon = %q, want %q", pmByName["Credit Card"].Icon, "\U0001F4B3")
+	}
+	if pmByName["Credit Card"].Color != "#0000ff" {
+		t.Errorf("PaymentMode Credit Card Color = %q, want %q", pmByName["Credit Card"].Color, "#0000ff")
+	}
+	if pmByName["Cash"].ID != 7 {
+		t.Errorf("PaymentMode Cash ID = %d, want 7", pmByName["Cash"].ID)
+	}
+	if pmByName["Cash"].Icon != "\U0001F4B5" {
+		t.Errorf("PaymentMode Cash Icon = %q, want %q", pmByName["Cash"].Icon, "\U0001F4B5")
+	}
+	if pmByName["Cash"].Color != "#00ff00" {
+		t.Errorf("PaymentMode Cash Color = %q, want %q", pmByName["Cash"].Color, "#00ff00")
 	}
 }
 

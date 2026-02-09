@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/mattn/go-runewidth"
 )
 
 // Table border characters
@@ -32,7 +34,7 @@ type Table struct {
 func NewTable(headers ...string) *Table {
 	colWidths := make([]int, len(headers))
 	for i, h := range headers {
-		colWidths[i] = len(h)
+		colWidths[i] = runewidth.StringWidth(h)
 	}
 	return &Table{
 		headers:   headers,
@@ -55,8 +57,8 @@ func (t *Table) AddRow(values ...string) {
 
 	// Update column widths
 	for i, v := range values {
-		if len(v) > t.colWidths[i] {
-			t.colWidths[i] = len(v)
+		if w := runewidth.StringWidth(v); w > t.colWidths[i] {
+			t.colWidths[i] = w
 		}
 	}
 }
@@ -88,7 +90,8 @@ func (t *Table) printBorder(w io.Writer, left, mid, right string) {
 func (t *Table) printRow(w io.Writer, values []string) {
 	_, _ = fmt.Fprint(w, borderVertical)
 	for i, val := range values {
-		_, _ = fmt.Fprintf(w, " %-*s %s", t.colWidths[i], val, borderVertical)
+		padded := runewidth.FillRight(val, t.colWidths[i])
+		_, _ = fmt.Fprintf(w, " %s %s", padded, borderVertical)
 	}
 	_, _ = fmt.Fprintln(w)
 }
