@@ -547,6 +547,54 @@ func TestProjectCurrencyName(t *testing.T) {
 	}
 }
 
+func TestProjectUnmarshalObjectKeyed(t *testing.T) {
+	// Real API returns categories and payment modes as objects keyed by ID
+	projectJSON := `{
+		"id": "test",
+		"name": "Test",
+		"currencyname": "₪",
+		"members": [],
+		"currencies": [],
+		"categories": {
+			"5": {"name": "Food", "icon": "🍔", "color": "#ff0000"},
+			"12": {"name": "Transport", "icon": "🚗", "color": "#00ff00"}
+		},
+		"paymentmodes": {
+			"3": {"name": "Credit Card", "icon": "💳", "color": "#0000ff"},
+			"7": {"name": "Cash", "icon": "💵", "color": "#00ff00"}
+		}
+	}`
+
+	var project Project
+	if err := json.Unmarshal([]byte(projectJSON), &project); err != nil {
+		t.Fatalf("Unmarshal error: %v", err)
+	}
+
+	// Verify categories have correct IDs from map keys
+	catByName := make(map[string]int)
+	for _, c := range project.Categories {
+		catByName[c.Name] = c.ID
+	}
+	if catByName["Food"] != 5 {
+		t.Errorf("Category Food ID = %d, want 5", catByName["Food"])
+	}
+	if catByName["Transport"] != 12 {
+		t.Errorf("Category Transport ID = %d, want 12", catByName["Transport"])
+	}
+
+	// Verify payment modes have correct IDs from map keys
+	pmByName := make(map[string]int)
+	for _, pm := range project.PaymentModes {
+		pmByName[pm.Name] = pm.ID
+	}
+	if pmByName["Credit Card"] != 3 {
+		t.Errorf("PaymentMode Credit Card ID = %d, want 3", pmByName["Credit Card"])
+	}
+	if pmByName["Cash"] != 7 {
+		t.Errorf("PaymentMode Cash ID = %d, want 7", pmByName["Cash"])
+	}
+}
+
 func mustMarshal(v any) json.RawMessage {
 	data, err := json.Marshal(v)
 	if err != nil {

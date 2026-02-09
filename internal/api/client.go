@@ -124,7 +124,10 @@ func parseCategories(data json.RawMessage) []Category {
 	var obj map[string]Category
 	if err := json.Unmarshal(data, &obj); err == nil {
 		result := make([]Category, 0, len(obj))
-		for _, cat := range obj {
+		for idStr, cat := range obj {
+			if id, err := strconv.Atoi(idStr); err == nil {
+				cat.ID = id
+			}
 			result = append(result, cat)
 		}
 		return result
@@ -142,7 +145,10 @@ func parsePaymentModes(data json.RawMessage) []PaymentMode {
 	var obj map[string]PaymentMode
 	if err := json.Unmarshal(data, &obj); err == nil {
 		result := make([]PaymentMode, 0, len(obj))
-		for _, pm := range obj {
+		for idStr, pm := range obj {
+			if id, err := strconv.Atoi(idStr); err == nil {
+				pm.ID = id
+			}
 			result = append(result, pm)
 		}
 		return result

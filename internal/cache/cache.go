@@ -302,8 +302,12 @@ func ResolveMember(project *api.Project, username string) (int, error) {
 	return 0, fmt.Errorf("member not found: %s", username)
 }
 
-// ResolveCategory finds a category by name (case-insensitive) or ID and returns the ID
+// ResolveCategory finds a category by name (case-insensitive, substring) or ID and returns the ID
 func ResolveCategory(project *api.Project, nameOrID string) (int, error) {
+	if nameOrID == "" {
+		return 0, fmt.Errorf("category not found: %s", nameOrID)
+	}
+
 	// Try parsing as ID first
 	if id, err := strconv.Atoi(nameOrID); err == nil {
 		for _, c := range project.Categories {
@@ -313,10 +317,18 @@ func ResolveCategory(project *api.Project, nameOrID string) (int, error) {
 		}
 	}
 
-	// Try matching by name (case-insensitive)
 	lowerName := strings.ToLower(nameOrID)
+
+	// Try exact match first
 	for _, c := range project.Categories {
 		if strings.ToLower(c.Name) == lowerName {
+			return c.ID, nil
+		}
+	}
+
+	// Fallback to substring match
+	for _, c := range project.Categories {
+		if strings.Contains(strings.ToLower(c.Name), lowerName) {
 			return c.ID, nil
 		}
 	}
@@ -324,8 +336,12 @@ func ResolveCategory(project *api.Project, nameOrID string) (int, error) {
 	return 0, fmt.Errorf("category not found: %s", nameOrID)
 }
 
-// ResolvePaymentMode finds a payment mode by name (case-insensitive) or ID and returns the ID
+// ResolvePaymentMode finds a payment mode by name (case-insensitive, substring) or ID and returns the ID
 func ResolvePaymentMode(project *api.Project, nameOrID string) (int, error) {
+	if nameOrID == "" {
+		return 0, fmt.Errorf("payment mode not found: %s", nameOrID)
+	}
+
 	// Try parsing as ID first
 	if id, err := strconv.Atoi(nameOrID); err == nil {
 		for _, pm := range project.PaymentModes {
@@ -335,10 +351,18 @@ func ResolvePaymentMode(project *api.Project, nameOrID string) (int, error) {
 		}
 	}
 
-	// Try matching by name (case-insensitive)
 	lowerName := strings.ToLower(nameOrID)
+
+	// Try exact match first
 	for _, pm := range project.PaymentModes {
 		if strings.ToLower(pm.Name) == lowerName {
+			return pm.ID, nil
+		}
+	}
+
+	// Fallback to substring match
+	for _, pm := range project.PaymentModes {
+		if strings.Contains(strings.ToLower(pm.Name), lowerName) {
 			return pm.ID, nil
 		}
 	}
