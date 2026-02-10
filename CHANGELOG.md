@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.6.0](https://github.com/chenasraf/cospend-cli/compare/v1.5.0...v1.6.0) (2026-02-10)
+
+
+### Features
+
+* add --today filter ([9a9cc6d](https://github.com/chenasraf/cospend-cli/commit/9a9cc6d14d742a5fe441787a419465d13e20edf1))
+* specify date for add command ([4bd4773](https://github.com/chenasraf/cospend-cli/commit/4bd4773a662aa4da04fc1324a9dff8157f335c4b))
+
+
+### Bug Fixes
+
+* add -d shorthand for list date filter ([b2837c0](https://github.com/chenasraf/cospend-cli/commit/b2837c0672a60822ce603d36250b54891b1d0c98))
+* update duplicate -d flag ([df7896d](https://github.com/chenasraf/cospend-cli/commit/df7896d2377c14adc95f249acad2020de83c5175))
+
 ## [1.5.0](https://github.com/chenasraf/cospend-cli/compare/v1.4.0...v1.5.0) (2026-02-10)
 
 
