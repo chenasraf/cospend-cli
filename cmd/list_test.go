@@ -387,6 +387,33 @@ func TestParseRecent(t *testing.T) {
 	}
 }
 
+func TestBuildFiltersToday(t *testing.T) {
+	resetListFlags()
+	defer resetListFlags()
+
+	project := &api.Project{}
+	listToday = true
+
+	filters, err := buildFilters(project)
+	if err != nil {
+		t.Fatalf("buildFilters() error = %v", err)
+	}
+
+	if len(filters) != 1 {
+		t.Fatalf("buildFilters() returned %d filters, want 1", len(filters))
+	}
+
+	today := time.Now().Format("2006-01-02")
+	yesterday := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
+
+	if !filters[0](api.BillResponse{Date: today}) {
+		t.Errorf("Filter should match today: %s", today)
+	}
+	if filters[0](api.BillResponse{Date: yesterday}) {
+		t.Errorf("Filter should not match yesterday: %s", yesterday)
+	}
+}
+
 func TestBuildFiltersDateFilter(t *testing.T) {
 	resetListFlags()
 	defer resetListFlags()
@@ -655,6 +682,7 @@ func resetListFlags() {
 	listCategory = ""
 	listLimit = 0
 	listDate = ""
+	listToday = false
 	listThisMonth = false
 	listThisWeek = false
 	listRecent = ""

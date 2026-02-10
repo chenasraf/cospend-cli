@@ -26,6 +26,7 @@ var (
 	listCategory      string
 	listLimit         int
 	listDate          string
+	listToday         bool
 	listThisMonth     bool
 	listThisWeek      bool
 	listRecent        string
@@ -52,6 +53,7 @@ Examples:
   cospend list -p myproject -c groceries
   cospend list -p myproject --amount ">50"
   cospend list -p myproject --amount "<=100" -n dinner
+  cospend list -p myproject --today
   cospend list -p myproject --date ">=2026-01-01"
   cospend list -p myproject --date "<=01-15"
   cospend list -p myproject --this-month
@@ -69,6 +71,7 @@ Examples:
 	cmd.Flags().StringVarP(&listCategory, "category", "c", "", "Filter by category")
 	cmd.Flags().IntVarP(&listLimit, "limit", "l", 0, "Limit number of results (0 = no limit)")
 	cmd.Flags().StringVar(&listDate, "date", "", "Filter by date (e.g., 2026-01-15, >=2026-01-01, <=01-15)")
+	cmd.Flags().BoolVar(&listToday, "today", false, "Filter bills from today")
 	cmd.Flags().BoolVar(&listThisMonth, "this-month", false, "Filter bills from the current month")
 	cmd.Flags().BoolVar(&listThisWeek, "this-week", false, "Filter bills from the current calendar week")
 	cmd.Flags().StringVar(&listRecent, "recent", "", "Filter recent bills (e.g., 7d, 2w, 1m)")
@@ -246,6 +249,14 @@ func buildFilters(project *api.Project) ([]billFilter, error) {
 		}
 		filters = append(filters, func(bill api.BillResponse) bool {
 			return bill.CategoryID == categoryID
+		})
+	}
+
+	// Filter by today
+	if listToday {
+		today := time.Now().Format("2006-01-02")
+		filters = append(filters, func(bill api.BillResponse) bool {
+			return bill.Date == today
 		})
 	}
 

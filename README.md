@@ -224,7 +224,8 @@ cospend list -p myproject -n dinner
 cospend list -p myproject --date ">=2026-01-01"
 cospend list -p myproject --date "<=01-15"        # short MM-DD format (assumes current year)
 
-# Filter by current month or week
+# Filter by today, current month, or week
+cospend list -p myproject --today
 cospend list -p myproject --this-month
 cospend list -p myproject --this-week
 
@@ -254,6 +255,7 @@ cospend list -p myproject --format json
 | `-m`  | `--method`     | Filter by payment method name or ID                            |
 | `-l`  | `--limit`      | Limit number of results (0 = no limit)                         |
 |       | `--date`       | Filter by date (e.g., `2026-01-15`, `>=2026-01-01`, `<=01-15`) |
+|       | `--today`      | Filter bills from today                                        |
 |       | `--this-month` | Filter bills from the current month                            |
 |       | `--this-week`  | Filter bills from the current calendar week                    |
 |       | `--recent`     | Filter recent bills (e.g., `7d`, `2w`, `1m`)                   |
