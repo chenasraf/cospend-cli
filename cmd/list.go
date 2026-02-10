@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/chenasraf/cospend-cli/internal/api"
 	"github.com/chenasraf/cospend-cli/internal/cache"
@@ -22,6 +23,10 @@ var (
 	listPaymentMethod string
 	listCategory      string
 	listLimit         int
+	listDate          string
+	listThisMonth     bool
+	listThisWeek      bool
+	listRecent        string
 )
 
 // amountFilter holds parsed amount filter criteria
@@ -43,7 +48,13 @@ Examples:
   cospend list -p myproject -b alice
   cospend list -p myproject -c groceries
   cospend list -p myproject --amount ">50"
-  cospend list -p myproject --amount "<=100" -n dinner`,
+  cospend list -p myproject --amount "<=100" -n dinner
+  cospend list -p myproject --date ">=2026-01-01"
+  cospend list -p myproject --date "<=01-15"
+  cospend list -p myproject --this-month
+  cospend list -p myproject --this-week
+  cospend list -p myproject --recent 7d
+  cospend list -p myproject --recent 2w`,
 		RunE: runList,
 	}
 
@@ -54,6 +65,10 @@ Examples:
 	cmd.Flags().StringVarP(&listPaymentMethod, "method", "m", "", "Filter by payment method")
 	cmd.Flags().StringVarP(&listCategory, "category", "c", "", "Filter by category")
 	cmd.Flags().IntVarP(&listLimit, "limit", "l", 0, "Limit number of results (0 = no limit)")
+	cmd.Flags().StringVar(&listDate, "date", "", "Filter by date (e.g., 2026-01-15, >=2026-01-01, <=01-15)")
+	cmd.Flags().BoolVar(&listThisMonth, "this-month", false, "Filter bills from the current month")
+	cmd.Flags().BoolVar(&listThisWeek, "this-week", false, "Filter bills from the current calendar week")
+	cmd.Flags().StringVar(&listRecent, "recent", "", "Filter recent bills (e.g., 7d, 2w, 1m)")
 
 	return cmd
 }
@@ -215,6 +230,54 @@ func buildFilters(project *api.Project) ([]billFilter, error) {
 		})
 	}
 
+	// Filter by date
+	if listDate != "" {
+		df, err := parseDateFilter(listDate)
+		if err != nil {
+			return nil, fmt.Errorf("parsing date filter: %w", err)
+		}
+		filters = append(filters, func(bill api.BillResponse) bool {
+			return matchDate(bill.Date, df)
+		})
+	}
+
+	// Filter by this month
+	if listThisMonth {
+		now := time.Now()
+		prefix := now.Format("2006-01")
+		filters = append(filters, func(bill api.BillResponse) bool {
+			return strings.HasPrefix(bill.Date, prefix)
+		})
+	}
+
+	// Filter by this week
+	if listThisWeek {
+		now := time.Now()
+		weekday := now.Weekday()
+		if weekday == time.Sunday {
+			weekday = 7
+		}
+		startOfWeek := now.AddDate(0, 0, -int(weekday-time.Monday))
+		endOfWeek := startOfWeek.AddDate(0, 0, 6)
+		startStr := startOfWeek.Format("2006-01-02")
+		endStr := endOfWeek.Format("2006-01-02")
+		filters = append(filters, func(bill api.BillResponse) bool {
+			return bill.Date >= startStr && bill.Date <= endStr
+		})
+	}
+
+	// Filter by recent duration
+	if listRecent != "" {
+		cutoff, err := parseRecent(listRecent)
+		if err != nil {
+			return nil, fmt.Errorf("parsing recent filter: %w", err)
+		}
+		cutoffStr := cutoff.Format("2006-01-02")
+		filters = append(filters, func(bill api.BillResponse) bool {
+			return bill.Date >= cutoffStr
+		})
+	}
+
 	return filters, nil
 }
 
@@ -276,6 +339,85 @@ func matchAmount(amount float64, af amountFilter) bool {
 		return amount <= af.value
 	default:
 		return false
+	}
+}
+
+// dateFilter holds parsed date filter criteria
+type dateFilter struct {
+	operator string
+	date     string // YYYY-MM-DD format for string comparison
+}
+
+func parseDateFilter(s string) (dateFilter, error) {
+	s = strings.TrimSpace(s)
+
+	re := regexp.MustCompile(`^(>=|<=|>|<|=)?(.+)$`)
+	matches := re.FindStringSubmatch(s)
+	if matches == nil {
+		return dateFilter{}, fmt.Errorf("invalid date filter format: %s", s)
+	}
+
+	operator := matches[1]
+	if operator == "" {
+		operator = "="
+	}
+
+	dateStr := strings.TrimSpace(matches[2])
+
+	// Try full date format YYYY-MM-DD
+	if _, err := time.Parse("2006-01-02", dateStr); err == nil {
+		return dateFilter{operator: operator, date: dateStr}, nil
+	}
+
+	// Try short format MM-DD (assume current year)
+	if t, err := time.Parse("01-02", dateStr); err == nil {
+		dateStr = fmt.Sprintf("%d-%s", time.Now().Year(), t.Format("01-02"))
+		return dateFilter{operator: operator, date: dateStr}, nil
+	}
+
+	return dateFilter{}, fmt.Errorf("invalid date format: %s (expected YYYY-MM-DD or MM-DD)", dateStr)
+}
+
+func matchDate(billDate string, df dateFilter) bool {
+	switch df.operator {
+	case "=":
+		return billDate == df.date
+	case ">":
+		return billDate > df.date
+	case "<":
+		return billDate < df.date
+	case ">=":
+		return billDate >= df.date
+	case "<=":
+		return billDate <= df.date
+	default:
+		return false
+	}
+}
+
+func parseRecent(s string) (time.Time, error) {
+	s = strings.TrimSpace(s)
+	if len(s) < 2 {
+		return time.Time{}, fmt.Errorf("invalid recent format: %s (expected e.g. 7d, 2w, 1m)", s)
+	}
+
+	unit := s[len(s)-1]
+	valueStr := s[:len(s)-1]
+	value, err := strconv.Atoi(valueStr)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid recent value: %s", valueStr)
+	}
+
+	now := time.Now()
+	switch unit {
+	case 'd':
+		return now.AddDate(0, 0, -value), nil
+	case 'w':
+		return now.AddDate(0, 0, -value*7), nil
+	case 'm':
+		return now.AddDate(0, -value, 0), nil
+	default:
+		return time.Time{}, fmt.Errorf("invalid recent unit: %c (expected d, w, or m)", unit)
 	}
 }
 

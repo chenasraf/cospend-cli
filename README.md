@@ -14,7 +14,7 @@ add and list expenses directly from your terminal without opening the web interf
 
 - **Add**, **list**, and **delete** expenses in Cospend projects via the **REST API**
 - **List projects** you have access to
-- **Filter** expenses by payer, owed members, amount, name, category, or payment method
+- **Filter** expenses by payer, owed members, amount, name, category, payment method, or date
 - Resolve categories, payment methods, and members by **name or ID**
 - **Case-insensitive** matching for all lookups
 - **Currency code support** (e.g., `usd`, `eur`, `gbp`) with automatic symbol resolution
@@ -220,23 +220,40 @@ cospend list -p myproject --amount "<=100"
 # Filter by name (case-insensitive, contains)
 cospend list -p myproject -n dinner
 
+# Filter by date (supports =, >, <, >=, <=)
+cospend list -p myproject --date ">=2026-01-01"
+cospend list -p myproject --date "<=01-15"        # short MM-DD format (assumes current year)
+
+# Filter by current month or week
+cospend list -p myproject --this-month
+cospend list -p myproject --this-week
+
+# Filter recent bills (d=days, w=weeks, m=months)
+cospend list -p myproject --recent 7d
+cospend list -p myproject --recent 2w
+cospend list -p myproject --recent 1m
+
 # Combine multiple filters
 cospend list -p myproject -b alice -c restaurant --amount ">=20"
 ```
 
 #### List Command Flags
 
-| Short | Long         | Description                                          |
-| ----- | ------------ | ---------------------------------------------------- |
-| `-p`  | `--project`  | Project ID (required)                                |
-| `-b`  | `--by`       | Filter by paying member username                     |
-| `-f`  | `--for`      | Filter by owed member username (repeatable)          |
-| `-a`  | `--amount`   | Filter by amount (e.g., `50`, `>30`, `<=100`, `=25`) |
-| `-n`  | `--name`     | Filter by name (case-insensitive, contains)          |
-| `-c`  | `--category` | Filter by category name or ID                        |
-| `-m`  | `--method`   | Filter by payment method name or ID                  |
-| `-l`  | `--limit`    | Limit number of results (0 = no limit)               |
-| `-h`  | `--help`     | Display help information                             |
+| Short | Long           | Description                                                    |
+| ----- | -------------- | -------------------------------------------------------------- |
+| `-p`  | `--project`    | Project ID (required)                                          |
+| `-b`  | `--by`         | Filter by paying member username                               |
+| `-f`  | `--for`        | Filter by owed member username (repeatable)                    |
+| `-a`  | `--amount`     | Filter by amount (e.g., `50`, `>30`, `<=100`, `=25`)           |
+| `-n`  | `--name`       | Filter by name (case-insensitive, contains)                    |
+| `-c`  | `--category`   | Filter by category name or ID                                  |
+| `-m`  | `--method`     | Filter by payment method name or ID                            |
+| `-l`  | `--limit`      | Limit number of results (0 = no limit)                         |
+|       | `--date`       | Filter by date (e.g., `2026-01-15`, `>=2026-01-01`, `<=01-15`) |
+|       | `--this-month` | Filter bills from the current month                            |
+|       | `--this-week`  | Filter bills from the current calendar week                    |
+|       | `--recent`     | Filter recent bills (e.g., `7d`, `2w`, `1m`)                   |
+| `-h`  | `--help`       | Display help information                                       |
 
 The output includes the bill ID for each expense, which can be used with the delete command.
 
