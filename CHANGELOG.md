@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.0](https://github.com/chenasraf/cospend-cli/compare/v1.4.0...v1.5.0) (2026-02-10)
+
+
+### Features
+
+* add csv/json format to ls ([d69f7d2](https://github.com/chenasraf/cospend-cli/commit/d69f7d2751ce6552cd7e03a508fcae87fd5aaf4f))
+* add date & recency filters ([254ec53](https://github.com/chenasraf/cospend-cli/commit/254ec5387650fccf6a1e31fcbc3e62ec1c163c97))
+
 ## [1.4.0](https://github.com/chenasraf/cospend-cli/compare/v1.3.0...v1.4.0) (2026-02-09)
 
 
