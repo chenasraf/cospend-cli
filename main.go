@@ -28,7 +28,7 @@ func main() {
 	rootCmd.AddCommand(cmd.NewProjectsCommand())
 	rootCmd.AddCommand(cmd.NewInfoCommand())
 
-	rootCmd.PersistentFlags().BoolVarP(&cmd.Debug, "debug", "d", false, "Enable debug output")
+	rootCmd.PersistentFlags().BoolVarP(&cmd.Debug, "debug", "D", false, "Enable debug output")
 	rootCmd.PersistentFlags().StringVarP(&cmd.ProjectID, "project", "p", "", "Project ID")
 	rootCmd.Flags().BoolP("version", "v", false, "Print version information")
 	rootCmd.SetVersionTemplate("{{.Version}}\n")
