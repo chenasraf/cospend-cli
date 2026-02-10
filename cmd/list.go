@@ -70,7 +70,7 @@ Examples:
 	cmd.Flags().StringVarP(&listPaymentMethod, "method", "m", "", "Filter by payment method")
 	cmd.Flags().StringVarP(&listCategory, "category", "c", "", "Filter by category")
 	cmd.Flags().IntVarP(&listLimit, "limit", "l", 0, "Limit number of results (0 = no limit)")
-	cmd.Flags().StringVar(&listDate, "date", "", "Filter by date (e.g., 2026-01-15, >=2026-01-01, <=01-15)")
+	cmd.Flags().StringVarP(&listDate, "date", "d", "", "Filter by date (e.g., 2026-01-15, >=2026-01-01, <=01-15)")
 	cmd.Flags().BoolVar(&listToday, "today", false, "Filter bills from today")
 	cmd.Flags().BoolVar(&listThisMonth, "this-month", false, "Filter bills from the current month")
 	cmd.Flags().BoolVar(&listThisWeek, "this-week", false, "Filter bills from the current calendar week")

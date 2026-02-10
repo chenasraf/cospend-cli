@@ -261,7 +261,7 @@ cospend list -p myproject --format json
 | `-c`  | `--category`   | Filter by category name or ID                                  |
 | `-m`  | `--method`     | Filter by payment method name or ID                            |
 | `-l`  | `--limit`      | Limit number of results (0 = no limit)                         |
-|       | `--date`       | Filter by date (e.g., `2026-01-15`, `>=2026-01-01`, `<=01-15`) |
+| `-d`  | `--date`       | Filter by date (e.g., `2026-01-15`, `>=2026-01-01`, `<=01-15`) |
 |       | `--today`      | Filter bills from today                                        |
 |       | `--this-month` | Filter bills from the current month                            |
 |       | `--this-week`  | Filter bills from the current calendar week                    |
