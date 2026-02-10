@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"sort"
@@ -27,6 +29,7 @@ var (
 	listThisMonth     bool
 	listThisWeek      bool
 	listRecent        string
+	listFormat        string
 )
 
 // amountFilter holds parsed amount filter criteria
@@ -69,6 +72,7 @@ Examples:
 	cmd.Flags().BoolVar(&listThisMonth, "this-month", false, "Filter bills from the current month")
 	cmd.Flags().BoolVar(&listThisWeek, "this-week", false, "Filter bills from the current calendar week")
 	cmd.Flags().StringVar(&listRecent, "recent", "", "Filter recent bills (e.g., 7d, 2w, 1m)")
+	cmd.Flags().StringVar(&listFormat, "format", "table", "Output format: table, csv, json")
 
 	return cmd
 }
@@ -76,6 +80,12 @@ Examples:
 func runList(cmd *cobra.Command, _ []string) error {
 	if ProjectID == "" {
 		return fmt.Errorf("project is required (use -p or --project)")
+	}
+
+	switch listFormat {
+	case "table", "csv", "json":
+	default:
+		return fmt.Errorf("unsupported format: %s (expected table, csv, or json)", listFormat)
 	}
 
 	// Parameters validated, silence usage for subsequent errors
@@ -138,9 +148,18 @@ func runList(cmd *cobra.Command, _ []string) error {
 	// Apply filters
 	filteredBills := applyFilters(bills, filters)
 
-	// Print table
+	// Output results
 	formatter := format.NewAmountFormatter(locale, project.CurrencyName)
-	printBillsTable(cmd, project, filteredBills, formatter)
+	resolved := resolveBillNames(project, filteredBills)
+
+	switch listFormat {
+	case "csv":
+		printBillsCSV(cmd, resolved)
+	case "json":
+		printBillsJSON(cmd, resolved)
+	default:
+		printBillsTable(cmd, resolved, formatter)
+	}
 
 	return nil
 }
@@ -421,12 +440,19 @@ func parseRecent(s string) (time.Time, error) {
 	}
 }
 
-func printBillsTable(cmd *cobra.Command, project *api.Project, bills []api.BillResponse, formatter *format.AmountFormatter) {
-	if len(bills) == 0 {
-		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No bills found.")
-		return
-	}
+// resolvedBill holds a bill with human-readable names resolved from IDs
+type resolvedBill struct {
+	ID            int      `json:"id"`
+	Date          string   `json:"date"`
+	Name          string   `json:"name"`
+	Amount        float64  `json:"amount"`
+	PaidBy        string   `json:"paid_by"`
+	PaidFor       []string `json:"paid_for"`
+	Category      string   `json:"category"`
+	PaymentMethod string   `json:"payment_method"`
+}
 
+func resolveBillNames(project *api.Project, bills []api.BillResponse) []resolvedBill {
 	// Sort by date (newest first), then by timestamp for same-date entries
 	sort.Slice(bills, func(i, j int) bool {
 		if bills[i].Date != bills[j].Date {
@@ -440,34 +466,27 @@ func printBillsTable(cmd *cobra.Command, project *api.Project, bills []api.BillR
 		bills = bills[:listLimit]
 	}
 
-	// Build lookup maps for names
+	// Build lookup maps
 	memberNames := make(map[int]string)
 	for _, m := range project.Members {
 		memberNames[m.ID] = m.Name
 	}
-
 	categoryNames := make(map[int]string)
 	for _, c := range project.Categories {
 		categoryNames[c.ID] = c.Name
 	}
-
 	paymentModeNames := make(map[int]string)
 	for _, pm := range project.PaymentModes {
 		paymentModeNames[pm.ID] = pm.Name
 	}
 
-	table := NewTable("ID", "DATE", "NAME", "AMOUNT", "PAID BY", "PAID FOR", "CATEGORY", "METHOD")
-
-	var totalAmount float64
+	var result []resolvedBill
 	for _, bill := range bills {
-		totalAmount += bill.Amount
-		// Get payer name
 		payerName := memberNames[bill.PayerID]
 		if payerName == "" {
 			payerName = fmt.Sprintf("#%d", bill.PayerID)
 		}
 
-		// Get owed member names
 		var owerNames []string
 		for _, ower := range bill.Owers {
 			name := memberNames[ower.ID]
@@ -476,33 +495,60 @@ func printBillsTable(cmd *cobra.Command, project *api.Project, bills []api.BillR
 			}
 			owerNames = append(owerNames, name)
 		}
-		owersStr := strings.Join(owerNames, ", ")
 
-		// Get category name
 		catName := categoryNames[bill.CategoryID]
 		if catName == "" && bill.CategoryID != 0 {
 			catName = fmt.Sprintf("#%d", bill.CategoryID)
 		}
-		if catName == "" {
-			catName = "-"
-		}
 
-		// Get payment method name
 		methodName := paymentModeNames[bill.PaymentModeID]
 		if methodName == "" && bill.PaymentModeID != 0 {
 			methodName = fmt.Sprintf("#%d", bill.PaymentModeID)
 		}
-		if methodName == "" {
-			methodName = "-"
-		}
 
-		// Sanitize and truncate name
 		name := strings.Map(func(r rune) rune {
 			if r == '\n' || r == '\r' || r == '\t' {
 				return ' '
 			}
 			return r
 		}, strings.TrimSpace(bill.What))
+
+		result = append(result, resolvedBill{
+			ID:            bill.ID,
+			Date:          bill.Date,
+			Name:          name,
+			Amount:        bill.Amount,
+			PaidBy:        payerName,
+			PaidFor:       owerNames,
+			Category:      catName,
+			PaymentMethod: methodName,
+		})
+	}
+	return result
+}
+
+func printBillsTable(cmd *cobra.Command, bills []resolvedBill, formatter *format.AmountFormatter) {
+	if len(bills) == 0 {
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No bills found.")
+		return
+	}
+
+	table := NewTable("ID", "DATE", "NAME", "AMOUNT", "PAID BY", "PAID FOR", "CATEGORY", "METHOD")
+
+	var totalAmount float64
+	for _, bill := range bills {
+		totalAmount += bill.Amount
+
+		catName := bill.Category
+		if catName == "" {
+			catName = "-"
+		}
+		methodName := bill.PaymentMethod
+		if methodName == "" {
+			methodName = "-"
+		}
+
+		name := bill.Name
 		if len(name) > 30 {
 			name = name[:27] + "..."
 		}
@@ -512,8 +558,8 @@ func printBillsTable(cmd *cobra.Command, project *api.Project, bills []api.BillR
 			bill.Date,
 			name,
 			formatter.Format(bill.Amount),
-			payerName,
-			owersStr,
+			bill.PaidBy,
+			strings.Join(bill.PaidFor, ", "),
 			catName,
 			methodName,
 		)
@@ -522,4 +568,34 @@ func printBillsTable(cmd *cobra.Command, project *api.Project, bills []api.BillR
 	out := cmd.OutOrStdout()
 	table.Render(out)
 	_, _ = fmt.Fprintf(out, "\nTotal: %d bill(s), %s\n", len(bills), formatter.Format(totalAmount))
+}
+
+func printBillsCSV(cmd *cobra.Command, bills []resolvedBill) {
+	out := cmd.OutOrStdout()
+	w := csv.NewWriter(out)
+
+	_ = w.Write([]string{"ID", "Date", "Name", "Amount", "Paid By", "Paid For", "Category", "Payment Method"})
+	for _, bill := range bills {
+		_ = w.Write([]string{
+			strconv.Itoa(bill.ID),
+			bill.Date,
+			bill.Name,
+			strconv.FormatFloat(bill.Amount, 'f', 2, 64),
+			bill.PaidBy,
+			strings.Join(bill.PaidFor, ", "),
+			bill.Category,
+			bill.PaymentMethod,
+		})
+	}
+	w.Flush()
+}
+
+func printBillsJSON(cmd *cobra.Command, bills []resolvedBill) {
+	out := cmd.OutOrStdout()
+	if bills == nil {
+		bills = []resolvedBill{}
+	}
+	enc := json.NewEncoder(out)
+	enc.SetIndent("", "  ")
+	_ = enc.Encode(bills)
 }

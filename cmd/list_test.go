@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -162,12 +164,14 @@ func TestPrintBillsTable(t *testing.T) {
 		},
 	}
 
+	resolved := resolveBillNames(project, bills)
+
 	cmd := NewListCommand()
 	buf := new(bytes.Buffer)
 	cmd.SetOut(buf)
 
 	formatter := format.NewAmountFormatter("en_US", "USD")
-	printBillsTable(cmd, project, bills, formatter)
+	printBillsTable(cmd, resolved, formatter)
 
 	output := buf.String()
 
@@ -198,15 +202,12 @@ func TestPrintBillsTable(t *testing.T) {
 func TestPrintBillsTableEmpty(t *testing.T) {
 	resetListFlags()
 
-	project := &api.Project{}
-	bills := []api.BillResponse{}
-
 	cmd := NewListCommand()
 	buf := new(bytes.Buffer)
 	cmd.SetOut(buf)
 
 	formatter := format.NewAmountFormatter("en_US", "")
-	printBillsTable(cmd, project, bills, formatter)
+	printBillsTable(cmd, nil, formatter)
 
 	output := buf.String()
 	if !bytes.Contains([]byte(output), []byte("No bills found")) {
@@ -503,6 +504,147 @@ func TestBuildFiltersRecent(t *testing.T) {
 	}
 }
 
+func TestPrintBillsCSV(t *testing.T) {
+	resetListFlags()
+
+	project := &api.Project{
+		Members: []api.Member{
+			{ID: 1, Name: "Alice", UserID: "alice"},
+			{ID: 2, Name: "Bob", UserID: "bob"},
+		},
+		Categories: []api.Category{
+			{ID: 1, Name: "Food"},
+		},
+		PaymentModes: []api.PaymentMode{
+			{ID: 1, Name: "Cash"},
+		},
+	}
+
+	bills := []api.BillResponse{
+		{
+			ID:            1,
+			What:          "Groceries",
+			Amount:        50.00,
+			Date:          "2026-02-03",
+			PayerID:       1,
+			Owers:         []api.Ower{{ID: 1, Weight: 1}, {ID: 2, Weight: 1}},
+			CategoryID:    1,
+			PaymentModeID: 1,
+		},
+		{
+			ID:      2,
+			What:    "Coffee",
+			Amount:  5.50,
+			Date:    "2026-02-04",
+			PayerID: 2,
+			Owers:   []api.Ower{{ID: 2, Weight: 1}},
+		},
+	}
+
+	resolved := resolveBillNames(project, bills)
+
+	cmd := NewListCommand()
+	buf := new(bytes.Buffer)
+	cmd.SetOut(buf)
+
+	printBillsCSV(cmd, resolved)
+
+	output := buf.String()
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+
+	if len(lines) != 3 {
+		t.Fatalf("Expected 3 lines (header + 2 rows), got %d:\n%s", len(lines), output)
+	}
+	if lines[0] != "ID,Date,Name,Amount,Paid By,Paid For,Category,Payment Method" {
+		t.Errorf("Wrong CSV header: %s", lines[0])
+	}
+	if !strings.Contains(lines[1], "Coffee") {
+		t.Errorf("First data row should contain 'Coffee' (newest first), got: %s", lines[1])
+	}
+	if !strings.Contains(lines[2], "Groceries") {
+		t.Errorf("Second data row should contain 'Groceries', got: %s", lines[2])
+	}
+}
+
+func TestPrintBillsJSON(t *testing.T) {
+	resetListFlags()
+
+	project := &api.Project{
+		Members: []api.Member{
+			{ID: 1, Name: "Alice", UserID: "alice"},
+		},
+		Categories: []api.Category{
+			{ID: 1, Name: "Food"},
+		},
+		PaymentModes: []api.PaymentMode{
+			{ID: 1, Name: "Cash"},
+		},
+	}
+
+	bills := []api.BillResponse{
+		{
+			ID:            1,
+			What:          "Groceries",
+			Amount:        50.00,
+			Date:          "2026-02-03",
+			PayerID:       1,
+			Owers:         []api.Ower{{ID: 1, Weight: 1}},
+			CategoryID:    1,
+			PaymentModeID: 1,
+		},
+	}
+
+	resolved := resolveBillNames(project, bills)
+
+	cmd := NewListCommand()
+	buf := new(bytes.Buffer)
+	cmd.SetOut(buf)
+
+	printBillsJSON(cmd, resolved)
+
+	var result []resolvedBill
+	if err := json.Unmarshal(buf.Bytes(), &result); err != nil {
+		t.Fatalf("Invalid JSON output: %v\n%s", err, buf.String())
+	}
+
+	if len(result) != 1 {
+		t.Fatalf("Expected 1 bill, got %d", len(result))
+	}
+	if result[0].Name != "Groceries" {
+		t.Errorf("Wrong name: %s", result[0].Name)
+	}
+	if result[0].Amount != 50.00 {
+		t.Errorf("Wrong amount: %f", result[0].Amount)
+	}
+	if result[0].PaidBy != "Alice" {
+		t.Errorf("Wrong paid_by: %s", result[0].PaidBy)
+	}
+	if result[0].Category != "Food" {
+		t.Errorf("Wrong category: %s", result[0].Category)
+	}
+	if result[0].PaymentMethod != "Cash" {
+		t.Errorf("Wrong payment_method: %s", result[0].PaymentMethod)
+	}
+}
+
+func TestPrintBillsJSONEmpty(t *testing.T) {
+	resetListFlags()
+
+	cmd := NewListCommand()
+	buf := new(bytes.Buffer)
+	cmd.SetOut(buf)
+
+	printBillsJSON(cmd, nil)
+
+	var result []resolvedBill
+	if err := json.Unmarshal(buf.Bytes(), &result); err != nil {
+		t.Fatalf("Invalid JSON output: %v\n%s", err, buf.String())
+	}
+	if len(result) != 0 {
+		t.Errorf("Expected empty array, got %d items", len(result))
+	}
+}
+
 func resetListFlags() {
 	ProjectID = ""
 	listPaidBy = ""
@@ -516,4 +658,5 @@ func resetListFlags() {
 	listThisMonth = false
 	listThisWeek = false
 	listRecent = ""
+	listFormat = "table"
 }

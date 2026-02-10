@@ -235,6 +235,10 @@ cospend list -p myproject --recent 1m
 
 # Combine multiple filters
 cospend list -p myproject -b alice -c restaurant --amount ">=20"
+
+# Output as CSV or JSON
+cospend list -p myproject --format csv
+cospend list -p myproject --format json
 ```
 
 #### List Command Flags
@@ -253,6 +257,7 @@ cospend list -p myproject -b alice -c restaurant --amount ">=20"
 |       | `--this-month` | Filter bills from the current month                            |
 |       | `--this-week`  | Filter bills from the current calendar week                    |
 |       | `--recent`     | Filter recent bills (e.g., `7d`, `2w`, `1m`)                   |
+|       | `--format`     | Output format: `table` (default), `csv`, `json`                |
 | `-h`  | `--help`       | Display help information                                       |
 
 The output includes the bill ID for each expense, which can be used with the delete command.
