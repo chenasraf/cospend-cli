@@ -3,9 +3,11 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/chenasraf/cospend-cli/internal/api"
 )
@@ -41,6 +43,7 @@ func resetFlags() {
 	convertTo = ""
 	paymentMethod = ""
 	comment = ""
+	addDate = ""
 	infoCached = false
 }
 
@@ -72,7 +75,7 @@ func TestNewAddCommand(t *testing.T) {
 	}
 
 	// Check flags exist (project is now a persistent flag on root)
-	flags := []string{"category", "by", "for", "convert", "method", "comment"}
+	flags := []string{"category", "by", "for", "convert", "method", "comment", "date"}
 	for _, flag := range flags {
 		if cmd.Flags().Lookup(flag) == nil {
 			t.Errorf("Missing flag: %s", flag)
@@ -87,6 +90,7 @@ func TestNewAddCommand(t *testing.T) {
 		"C": "convert",
 		"m": "method",
 		"o": "comment",
+		"d": "date",
 	}
 	for short, long := range shortFlags {
 		flag := cmd.Flags().ShorthandLookup(short)
@@ -482,5 +486,94 @@ func TestAddCommandAPIError(t *testing.T) {
 	err := cmd.Execute()
 	if err == nil {
 		t.Error("Expected error from API")
+	}
+}
+
+func TestParseDate(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		wantDate string
+		wantErr  bool
+	}{
+		{"full date", "2026-03-15", "2026-03-15", false},
+		{"short date", "03-15", fmt.Sprintf("%d-03-15", time.Now().Year()), false},
+		{"with spaces", " 2026-01-01 ", "2026-01-01", false},
+		{"relative -1d", "-1d", time.Now().AddDate(0, 0, -1).Format("2006-01-02"), false},
+		{"relative +2d", "+2d", time.Now().AddDate(0, 0, 2).Format("2006-01-02"), false},
+		{"relative -1w", "-1w", time.Now().AddDate(0, 0, -7).Format("2006-01-02"), false},
+		{"relative +2w", "+2w", time.Now().AddDate(0, 0, 14).Format("2006-01-02"), false},
+		{"relative -1m", "-1m", time.Now().AddDate(0, -1, 0).Format("2006-01-02"), false},
+		{"relative +3m", "+3m", time.Now().AddDate(0, 3, 0).Format("2006-01-02"), false},
+		{"invalid", "not-a-date", "", true},
+		{"invalid short", "13-40", "", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseDate(tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseDate() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && got != tt.wantDate {
+				t.Errorf("parseDate() = %v, want %v", got, tt.wantDate)
+			}
+		})
+	}
+}
+
+func TestAddCommandWithDate(t *testing.T) {
+	project := api.Project{
+		ID:   "test-project",
+		Name: "Test Project",
+		Members: []api.Member{
+			{ID: 1, Name: "testuser", UserID: "testuser"},
+		},
+	}
+
+	var receivedBill map[string]string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/ocs/v2.php/apps/cospend/api/v1/projects/test-project" {
+			_ = json.NewEncoder(w).Encode(makeOCSResponse(200, project))
+			return
+		}
+		if r.URL.Path == "/ocs/v2.php/cloud/user" {
+			_ = json.NewEncoder(w).Encode(makeOCSResponse(200, map[string]string{"locale": "en_US", "language": "en"}))
+			return
+		}
+		if r.URL.Path == "/ocs/v2.php/apps/cospend/api/v1/projects/test-project/bills" {
+			_ = r.ParseForm()
+			receivedBill = make(map[string]string)
+			for k, v := range r.Form {
+				if len(v) > 0 {
+					receivedBill[k] = v[0]
+				}
+			}
+			_ = json.NewEncoder(w).Encode(makeOCSResponse(200, map[string]int{"id": 1}))
+			return
+		}
+	}))
+	defer server.Close()
+
+	cleanup := setupTestEnv(t, server.URL)
+	defer cleanup()
+
+	ProjectID = "test-project"
+	cmd := NewAddCommand()
+	var stdout bytes.Buffer
+	cmd.SetOut(&stdout)
+	cmd.SetArgs([]string{"Groceries", "25.50", "-d", "2026-06-15"})
+
+	err := cmd.Execute()
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	if receivedBill["date"] != "2026-06-15" {
+		t.Errorf("Wrong date: got %s, want 2026-06-15", receivedBill["date"])
+	}
+	if !bytes.Contains(stdout.Bytes(), []byte("Date:     2026-06-15")) {
+		t.Errorf("Output should show date, got:\n%s", stdout.String())
 	}
 }

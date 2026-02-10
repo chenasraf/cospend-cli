@@ -177,6 +177,12 @@ cospend add "Hotel" 150.00 -p vacation -m "credit card" -o "2 nights"
 
 # Add an expense in a different currency
 cospend add "Souvenirs" 30.00 -p vacation -C usd
+
+# Add an expense with a specific date
+cospend add "Lunch" 15.00 -p myproject -d 2026-03-15
+cospend add "Lunch" 15.00 -p myproject -d 03-15        # assumes current year
+cospend add "Lunch" 15.00 -p myproject -d -1d          # yesterday
+cospend add "Lunch" 15.00 -p myproject -d +2d          # 2 days from now
 ```
 
 #### Add Command Flags
@@ -190,6 +196,7 @@ cospend add "Souvenirs" 30.00 -p vacation -C usd
 | `-C`  | `--convert`  | Currency to convert to (by ID, name, or code like `usd`)  |
 | `-m`  | `--method`   | Payment method by ID or case-insensitive name             |
 | `-o`  | `--comment`  | Additional details about the bill                         |
+| `-d`  | `--date`     | Date of expense (`YYYY-MM-DD`, `MM-DD`, or relative like `-1d`, `+2w`) |
 | `-h`  | `--help`     | Display help information                                  |
 
 ---

@@ -20,6 +20,7 @@ var (
 	convertTo     string
 	paymentMethod string
 	comment       string
+	addDate       string
 )
 
 // NewAddCommand creates the add command
@@ -42,6 +43,7 @@ Examples:
 	cmd.Flags().StringVarP(&convertTo, "convert", "C", "", "Currency to convert to")
 	cmd.Flags().StringVarP(&paymentMethod, "method", "m", "", "Payment method by ID or name")
 	cmd.Flags().StringVarP(&comment, "comment", "o", "", "Additional details about the bill")
+	cmd.Flags().StringVarP(&addDate, "date", "d", "", "Date of expense (YYYY-MM-DD, MM-DD, or relative like -1d, +2w)")
 
 	return cmd
 }
@@ -118,13 +120,23 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// Resolve date
+	billDate := time.Now().Format("2006-01-02")
+	if addDate != "" {
+		parsed, err := parseDate(addDate)
+		if err != nil {
+			return err
+		}
+		billDate = parsed
+	}
+
 	// Build bill
 	bill := api.Bill{
 		What:    expenseName,
 		Amount:  amount,
 		PayerID: payerID,
 		OwedTo:  owedIDs,
-		Date:    time.Now().Format("2006-01-02"),
+		Date:    billDate,
 	}
 
 	// Resolve optional category
@@ -215,5 +227,45 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	if bill.Comment != "" {
 		_, _ = fmt.Fprintf(out, "  Comment:  %s\n", bill.Comment)
 	}
+	if addDate != "" {
+		_, _ = fmt.Fprintf(out, "  Date:     %s\n", bill.Date)
+	}
 	return nil
+}
+
+func parseDate(s string) (string, error) {
+	s = strings.TrimSpace(s)
+
+	// Try relative date: -1d, +2d, -1w, +2w, -1m, +2m
+	if len(s) >= 2 && (s[0] == '+' || s[0] == '-') {
+		unit := s[len(s)-1]
+		valueStr := s[1 : len(s)-1]
+		value, err := strconv.Atoi(valueStr)
+		if err == nil {
+			if s[0] == '-' {
+				value = -value
+			}
+			now := time.Now()
+			switch unit {
+			case 'd':
+				return now.AddDate(0, 0, value).Format("2006-01-02"), nil
+			case 'w':
+				return now.AddDate(0, 0, value*7).Format("2006-01-02"), nil
+			case 'm':
+				return now.AddDate(0, value, 0).Format("2006-01-02"), nil
+			}
+		}
+	}
+
+	// Try full date YYYY-MM-DD
+	if _, err := time.Parse("2006-01-02", s); err == nil {
+		return s, nil
+	}
+
+	// Try short date MM-DD (assume current year)
+	if t, err := time.Parse("01-02", s); err == nil {
+		return fmt.Sprintf("%d-%s", time.Now().Year(), t.Format("01-02")), nil
+	}
+
+	return "", fmt.Errorf("invalid date: %s (expected YYYY-MM-DD, MM-DD, or relative like -1d, +2w)", s)
 }
