@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.7.0](https://github.com/chenasraf/cospend-cli/compare/v1.6.0...v1.7.0) (2026-03-23)
+
+
+### Features
+
+* add config list, config get/set for username/domain ([0a39122](https://github.com/chenasraf/cospend-cli/commit/0a391224c9c856b90b8b19796c7a71eab6f699eb))
+* add default-project setting ([59cb401](https://github.com/chenasraf/cospend-cli/commit/59cb401946e143e59ddd8b3c35f0c65d3dad4fcb))
+* add doctor command ([1b4d724](https://github.com/chenasraf/cospend-cli/commit/1b4d72443d9ba8bb61c634054966ad25edc462a7))
+* add logout command ([345d7c0](https://github.com/chenasraf/cospend-cli/commit/345d7c0cd118920212269180f6beb356b7de2f5e))
+* bill repeat ([05fa043](https://github.com/chenasraf/cospend-cli/commit/05fa043a3699a903f97cec20433710338f14506c))
+* edit/update command ([bb31850](https://github.com/chenasraf/cospend-cli/commit/bb31850bf3b08b404ccf94eaade7be74d39603e9))
+
 ## [1.6.0](https://github.com/chenasraf/cospend-cli/compare/v1.5.0...v1.6.0) (2026-02-10)
 
 
