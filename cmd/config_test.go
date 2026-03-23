@@ -274,3 +274,112 @@ func TestConfigSetTOML(t *testing.T) {
 		t.Errorf("Config should contain 'tomlproject', got: %s", string(data))
 	}
 }
+
+func TestConfigList(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", tempDir)
+	t.Setenv("HOME", tempDir)
+
+	configDir := filepath.Join(tempDir, "cospend")
+	if err := os.MkdirAll(configDir, 0700); err != nil {
+		t.Fatalf("Failed to create config dir: %v", err)
+	}
+	configPath := filepath.Join(configDir, "cospend.json")
+	configContent := `{"domain": "https://cloud.example.com", "user": "alice", "password": "supersecretpass", "default_project": "myproject"}`
+	if err := os.WriteFile(configPath, []byte(configContent), 0600); err != nil {
+		t.Fatalf("Failed to write config: %v", err)
+	}
+
+	cmd := NewConfigCommand()
+	var stdout bytes.Buffer
+	cmd.SetOut(&stdout)
+	cmd.SetArgs([]string{"list"})
+
+	err := cmd.Execute()
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	output := stdout.String()
+	if !bytes.Contains([]byte(output), []byte("Config file:")) {
+		t.Errorf("Should show config file path, got: %s", output)
+	}
+	if !bytes.Contains([]byte(output), []byte("https://cloud.example.com")) {
+		t.Errorf("Should show domain, got: %s", output)
+	}
+	if !bytes.Contains([]byte(output), []byte("alice")) {
+		t.Errorf("Should show user, got: %s", output)
+	}
+	if !bytes.Contains([]byte(output), []byte("myproject")) {
+		t.Errorf("Should show default project, got: %s", output)
+	}
+	// Password should be masked
+	if bytes.Contains([]byte(output), []byte("supersecretpass")) {
+		t.Errorf("Password should be masked, got: %s", output)
+	}
+	if !bytes.Contains([]byte(output), []byte("********")) {
+		t.Errorf("Should show masked password, got: %s", output)
+	}
+}
+
+func TestConfigListNoDefaultProject(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", tempDir)
+	t.Setenv("HOME", tempDir)
+
+	configDir := filepath.Join(tempDir, "cospend")
+	if err := os.MkdirAll(configDir, 0700); err != nil {
+		t.Fatalf("Failed to create config dir: %v", err)
+	}
+	configPath := filepath.Join(configDir, "cospend.json")
+	configContent := `{"domain": "https://example.com", "user": "bob", "password": "pass"}`
+	if err := os.WriteFile(configPath, []byte(configContent), 0600); err != nil {
+		t.Fatalf("Failed to write config: %v", err)
+	}
+
+	cmd := NewConfigCommand()
+	var stdout bytes.Buffer
+	cmd.SetOut(&stdout)
+	cmd.SetArgs([]string{"list"})
+
+	err := cmd.Execute()
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	output := stdout.String()
+	if bytes.Contains([]byte(output), []byte("default-project")) {
+		t.Errorf("Should not show default-project when not set, got: %s", output)
+	}
+}
+
+func TestConfigListNoConfigFile(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", tempDir)
+	t.Setenv("HOME", tempDir)
+
+	cmd := NewConfigCommand()
+	cmd.SetArgs([]string{"list"})
+
+	err := cmd.Execute()
+	if err == nil {
+		t.Error("Expected error when no config file exists")
+	}
+}
+
+func TestMaskPassword(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"", "(not set)"},
+		{"ab", "********"},
+		{"supersecretpass", "********"},
+	}
+	for _, tt := range tests {
+		got := maskPassword(tt.input)
+		if got != tt.want {
+			t.Errorf("maskPassword(%q) = %q, want %q", tt.input, got, tt.want)
+		}
+	}
+}
