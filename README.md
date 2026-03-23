@@ -19,6 +19,7 @@ add and list expenses directly from your terminal without opening the web interf
 - **Case-insensitive** matching for all lookups
 - **Currency code support** (e.g., `usd`, `eur`, `gbp`) with automatic symbol resolution
 - **Local caching** of project data with 1-hour TTL for faster subsequent calls
+- **Default project** - set once with `config set`, no need to pass `-p` every time
 - **Global project flag** - set `-p` before the command for easy shell aliases
 - **Secure browser login** - OAuth-style authentication with 2FA support
 - Cross-platform support: **macOS**, **Linux**, and **Windows**
@@ -151,6 +152,18 @@ alias cospend-home="cospend -p homeproject"
 cospend-home add "Groceries" 25.50
 cospend-home list
 ```
+
+You can also set a default project so you don't need `-p` at all:
+
+```bash
+cospend config set default-project myproject
+
+# Now these work without -p:
+cospend add "Groceries" 25.50
+cospend list
+```
+
+The `-p` flag always takes precedence over the default project.
 
 ---
 
@@ -367,6 +380,31 @@ cospend projects --all
 | ----- | -------- | ------------------------------------ |
 | `-a`  | `--all`  | Show all projects including archived |
 | `-h`  | `--help` | Display help information             |
+
+---
+
+### Managing Configuration
+
+```bash
+cospend config set <key> <value>
+cospend config get <key>
+```
+
+#### Supported Keys
+
+| Key                 | Description                                        |
+| ------------------- | -------------------------------------------------- |
+| `default-project`   | Default project ID (used when `-p` is not specified) |
+
+#### Examples
+
+```bash
+# Set a default project
+cospend config set default-project myproject
+
+# View the current default project
+cospend config get default-project
+```
 
 ---
 

@@ -27,9 +27,10 @@ func NormalizeURL(url string) string {
 
 // Config holds the Nextcloud configuration
 type Config struct {
-	Domain   string `json:"domain" yaml:"domain" toml:"domain"`
-	User     string `json:"user" yaml:"user" toml:"user"`
-	Password string `json:"password" yaml:"password" toml:"password"`
+	Domain         string `json:"domain" yaml:"domain" toml:"domain"`
+	User           string `json:"user" yaml:"user" toml:"user"`
+	Password       string `json:"password" yaml:"password" toml:"password"`
+	DefaultProject string `json:"default_project,omitempty" yaml:"default_project,omitempty" toml:"default_project,omitempty"`
 }
 
 // configExtensions lists supported config file extensions in order of preference
@@ -205,11 +206,39 @@ func SaveToPath(cfg *Config, path string) (string, error) {
 	return path, nil
 }
 
+// LoadRaw reads configuration without validating required fields.
+// Useful for reading optional settings like DefaultProject.
+func LoadRaw() *Config {
+	var cfg Config
+
+	if configPath := GetConfigPath(); configPath != "" {
+		fileCfg, err := LoadFromFile(configPath)
+		if err == nil {
+			cfg = *fileCfg
+		}
+	}
+
+	if domain := os.Getenv("NEXTCLOUD_DOMAIN"); domain != "" {
+		cfg.Domain = domain
+	}
+	if user := os.Getenv("NEXTCLOUD_USER"); user != "" {
+		cfg.User = user
+	}
+	if password := os.Getenv("NEXTCLOUD_PASSWORD"); password != "" {
+		cfg.Password = password
+	}
+
+	return &cfg
+}
+
 // tomlMarshal encodes config to TOML format
 func tomlMarshal(cfg *Config) ([]byte, error) {
 	content := fmt.Sprintf(`domain = %q
 user = %q
 password = %q
 `, cfg.Domain, cfg.User, cfg.Password)
+	if cfg.DefaultProject != "" {
+		content += fmt.Sprintf("default_project = %q\n", cfg.DefaultProject)
+	}
 	return []byte(content), nil
 }
