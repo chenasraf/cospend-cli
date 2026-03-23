@@ -21,6 +21,7 @@ var (
 	editPaymentMethod string
 	editComment       string
 	editDate          string
+	editRepeat        string
 )
 
 // NewEditCommand creates the edit command
@@ -49,6 +50,7 @@ Examples:
 	cmd.Flags().StringVarP(&editPaymentMethod, "method", "m", "", "Payment method by ID or name")
 	cmd.Flags().StringVarP(&editComment, "comment", "o", "", "Comment")
 	cmd.Flags().StringVarP(&editDate, "date", "d", "", "Date (YYYY-MM-DD, MM-DD, or relative like -1d, +2w)")
+	cmd.Flags().StringVarP(&editRepeat, "repeat", "r", "", "Repeat frequency: n (none), d (daily), w (weekly), b (biweekly), s (semi-monthly), m (monthly), y (yearly)")
 
 	return cmd
 }
@@ -119,6 +121,7 @@ func runEdit(cmd *cobra.Command, args []string) error {
 		Comment:       existing.Comment,
 		PaymentModeID: existing.PaymentModeID,
 		CategoryID:    existing.CategoryID,
+		Repeat:        existing.Repeat,
 	}
 	for _, o := range existing.Owers {
 		bill.OwedTo = append(bill.OwedTo, o.ID)
@@ -185,6 +188,13 @@ func runEdit(cmd *cobra.Command, args []string) error {
 		bill.Comment = editComment
 	}
 
+	if cmd.Flags().Changed("repeat") {
+		if _, ok := api.ValidRepeatFrequencies[editRepeat]; !ok {
+			return fmt.Errorf("invalid repeat frequency: %s (valid: n, d, w, b, s, m, y)", editRepeat)
+		}
+		bill.Repeat = editRepeat
+	}
+
 	// Edit the bill
 	if err := client.EditBill(ProjectID, billID, bill); err != nil {
 		return fmt.Errorf("editing bill: %w", err)
@@ -235,6 +245,9 @@ func runEdit(cmd *cobra.Command, args []string) error {
 	}
 	if bill.Comment != "" {
 		_, _ = fmt.Fprintf(out, "  Comment:  %s\n", bill.Comment)
+	}
+	if bill.Repeat != "" && bill.Repeat != "n" {
+		_, _ = fmt.Fprintf(out, "  Repeat:   %s\n", api.ValidRepeatFrequencies[bill.Repeat])
 	}
 
 	return nil

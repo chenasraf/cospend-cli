@@ -183,6 +183,10 @@ cospend add "Lunch" 15.00 -p myproject -d 2026-03-15
 cospend add "Lunch" 15.00 -p myproject -d 03-15        # assumes current year
 cospend add "Lunch" 15.00 -p myproject -d -1d          # yesterday
 cospend add "Lunch" 15.00 -p myproject -d +2d          # 2 days from now
+
+# Add a recurring expense
+cospend add "Rent" 1200.00 -p myproject -r m            # monthly
+cospend add "Gym" 50.00 -p myproject -r w               # weekly
 ```
 
 #### Add Command Flags
@@ -197,6 +201,7 @@ cospend add "Lunch" 15.00 -p myproject -d +2d          # 2 days from now
 | `-m`  | `--method`   | Payment method by ID or case-insensitive name             |
 | `-o`  | `--comment`  | Additional details about the bill                         |
 | `-d`  | `--date`     | Date of expense (`YYYY-MM-DD`, `MM-DD`, or relative like `-1d`, `+2w`) |
+| `-r`  | `--repeat`   | Repeat frequency: `d` (daily), `w` (weekly), `b` (biweekly), `s` (semi-monthly), `m` (monthly), `y` (yearly) |
 | `-h`  | `--help`     | Display help information                                  |
 
 ---
@@ -311,6 +316,7 @@ cospend edit 123 -p myproject -d 2026-06-15 -o "corrected date"
 | `-m`  | `--method`   | Payment method by ID or case-insensitive name                          |
 | `-o`  | `--comment`  | Comment                                                                |
 | `-d`  | `--date`     | Date (`YYYY-MM-DD`, `MM-DD`, or relative like `-1d`, `+2w`)           |
+| `-r`  | `--repeat`   | Repeat frequency: `n` (none), `d` (daily), `w` (weekly), `b` (biweekly), `s` (semi-monthly), `m` (monthly), `y` (yearly) |
 | `-h`  | `--help`     | Display help information                                               |
 
 ---

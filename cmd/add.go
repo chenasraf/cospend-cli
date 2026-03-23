@@ -21,6 +21,7 @@ var (
 	paymentMethod string
 	comment       string
 	addDate       string
+	repeat        string
 )
 
 // NewAddCommand creates the add command
@@ -44,6 +45,7 @@ Examples:
 	cmd.Flags().StringVarP(&paymentMethod, "method", "m", "", "Payment method by ID or name")
 	cmd.Flags().StringVarP(&comment, "comment", "o", "", "Additional details about the bill")
 	cmd.Flags().StringVarP(&addDate, "date", "d", "", "Date of expense (YYYY-MM-DD, MM-DD, or relative like -1d, +2w)")
+	cmd.Flags().StringVarP(&repeat, "repeat", "r", "", "Repeat frequency: d (daily), w (weekly), b (biweekly), s (semi-monthly), m (monthly), y (yearly)")
 
 	return cmd
 }
@@ -189,6 +191,14 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		bill.Comment = comment
 	}
 
+	// Set repeat frequency
+	if repeat != "" {
+		if _, ok := api.ValidRepeatFrequencies[repeat]; !ok {
+			return fmt.Errorf("invalid repeat frequency: %s (valid: d, w, b, s, m, y)", repeat)
+		}
+		bill.Repeat = repeat
+	}
+
 	// Create the bill
 	if err := client.CreateBill(ProjectID, bill); err != nil {
 		return fmt.Errorf("creating bill: %w", err)
@@ -229,6 +239,9 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	}
 	if addDate != "" {
 		_, _ = fmt.Fprintf(out, "  Date:     %s\n", bill.Date)
+	}
+	if bill.Repeat != "" && bill.Repeat != "n" {
+		_, _ = fmt.Fprintf(out, "  Repeat:   %s\n", api.ValidRepeatFrequencies[bill.Repeat])
 	}
 	return nil
 }

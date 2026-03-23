@@ -176,6 +176,18 @@ type Bill struct {
 	PaymentModeID      int     `json:"paymentmodeid,omitempty"`
 	CategoryID         int     `json:"categoryid,omitempty"`
 	OriginalCurrencyID int     `json:"original_currency_id,omitempty"`
+	Repeat             string  `json:"repeat,omitempty"`
+}
+
+// Valid repeat frequencies for bills
+var ValidRepeatFrequencies = map[string]string{
+	"n": "none",
+	"d": "daily",
+	"w": "weekly",
+	"b": "biweekly",
+	"s": "semi-monthly",
+	"m": "monthly",
+	"y": "yearly",
 }
 
 // BillResponse represents a bill returned from the API
@@ -346,7 +358,11 @@ func (c *Client) CreateBill(projectID string, bill Bill) error {
 	data.Set("payer", strconv.Itoa(bill.PayerID))
 	data.Set("date", bill.Date)
 	data.Set("timestamp", strconv.FormatInt(time.Now().Unix(), 10))
-	data.Set("repeat", "n")
+	repeat := bill.Repeat
+	if repeat == "" {
+		repeat = "n"
+	}
+	data.Set("repeat", repeat)
 
 	// Format owed member IDs as comma-separated string
 	owedIDs := make([]string, len(bill.OwedTo))
@@ -480,6 +496,11 @@ func (c *Client) EditBill(projectID string, billID int, bill Bill) error {
 	data.Set("payer", strconv.Itoa(bill.PayerID))
 	data.Set("date", bill.Date)
 	data.Set("timestamp", strconv.FormatInt(time.Now().Unix(), 10))
+	editRepeat := bill.Repeat
+	if editRepeat == "" {
+		editRepeat = "n"
+	}
+	data.Set("repeat", editRepeat)
 
 	// Format owed member IDs as comma-separated string
 	owedIDs := make([]string, len(bill.OwedTo))

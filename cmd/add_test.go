@@ -44,6 +44,7 @@ func resetFlags() {
 	paymentMethod = ""
 	comment = ""
 	addDate = ""
+	repeat = ""
 	editName = ""
 	editAmount = ""
 	editCategory = ""
@@ -52,6 +53,7 @@ func resetFlags() {
 	editPaymentMethod = ""
 	editComment = ""
 	editDate = ""
+	editRepeat = ""
 	infoCached = false
 }
 
@@ -583,5 +585,151 @@ func TestAddCommandWithDate(t *testing.T) {
 	}
 	if !bytes.Contains(stdout.Bytes(), []byte("Date:     2026-06-15")) {
 		t.Errorf("Output should show date, got:\n%s", stdout.String())
+	}
+}
+
+func TestAddCommandWithRepeat(t *testing.T) {
+	project := api.Project{
+		ID:   "test-project",
+		Name: "Test Project",
+		Members: []api.Member{
+			{ID: 1, Name: "testuser", UserID: "testuser"},
+		},
+	}
+
+	var receivedBill map[string]string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/ocs/v2.php/apps/cospend/api/v1/projects/test-project" {
+			_ = json.NewEncoder(w).Encode(makeOCSResponse(200, project))
+			return
+		}
+		if r.URL.Path == "/ocs/v2.php/cloud/user" {
+			_ = json.NewEncoder(w).Encode(makeOCSResponse(200, map[string]string{"locale": "en_US", "language": "en"}))
+			return
+		}
+		if r.URL.Path == "/ocs/v2.php/apps/cospend/api/v1/projects/test-project/bills" {
+			_ = r.ParseForm()
+			receivedBill = make(map[string]string)
+			for k, v := range r.Form {
+				if len(v) > 0 {
+					receivedBill[k] = v[0]
+				}
+			}
+			_ = json.NewEncoder(w).Encode(makeOCSResponse(200, map[string]int{"id": 1}))
+			return
+		}
+	}))
+	defer server.Close()
+
+	cleanup := setupTestEnv(t, server.URL)
+	defer cleanup()
+
+	ProjectID = "test-project"
+	cmd := NewAddCommand()
+	var stdout bytes.Buffer
+	cmd.SetOut(&stdout)
+	cmd.SetArgs([]string{"Rent", "1200.00", "-r", "m"})
+
+	err := cmd.Execute()
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	if receivedBill["repeat"] != "m" {
+		t.Errorf("Wrong repeat: got %s, want m", receivedBill["repeat"])
+	}
+	if !bytes.Contains(stdout.Bytes(), []byte("Repeat:   monthly")) {
+		t.Errorf("Output should show repeat, got:\n%s", stdout.String())
+	}
+}
+
+func TestAddCommandWithInvalidRepeat(t *testing.T) {
+	project := api.Project{
+		ID:   "test-project",
+		Name: "Test Project",
+		Members: []api.Member{
+			{ID: 1, Name: "testuser", UserID: "testuser"},
+		},
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/ocs/v2.php/apps/cospend/api/v1/projects/test-project" {
+			_ = json.NewEncoder(w).Encode(makeOCSResponse(200, project))
+			return
+		}
+		if r.URL.Path == "/ocs/v2.php/cloud/user" {
+			_ = json.NewEncoder(w).Encode(makeOCSResponse(200, map[string]string{"locale": "en_US", "language": "en"}))
+			return
+		}
+	}))
+	defer server.Close()
+
+	cleanup := setupTestEnv(t, server.URL)
+	defer cleanup()
+
+	ProjectID = "test-project"
+	cmd := NewAddCommand()
+	cmd.SetArgs([]string{"Test", "10.00", "-r", "x"})
+
+	err := cmd.Execute()
+	if err == nil {
+		t.Error("Expected error for invalid repeat frequency")
+	}
+}
+
+func TestAddCommandDefaultRepeat(t *testing.T) {
+	project := api.Project{
+		ID:   "test-project",
+		Name: "Test Project",
+		Members: []api.Member{
+			{ID: 1, Name: "testuser", UserID: "testuser"},
+		},
+	}
+
+	var receivedBill map[string]string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/ocs/v2.php/apps/cospend/api/v1/projects/test-project" {
+			_ = json.NewEncoder(w).Encode(makeOCSResponse(200, project))
+			return
+		}
+		if r.URL.Path == "/ocs/v2.php/cloud/user" {
+			_ = json.NewEncoder(w).Encode(makeOCSResponse(200, map[string]string{"locale": "en_US", "language": "en"}))
+			return
+		}
+		if r.URL.Path == "/ocs/v2.php/apps/cospend/api/v1/projects/test-project/bills" {
+			_ = r.ParseForm()
+			receivedBill = make(map[string]string)
+			for k, v := range r.Form {
+				if len(v) > 0 {
+					receivedBill[k] = v[0]
+				}
+			}
+			_ = json.NewEncoder(w).Encode(makeOCSResponse(200, map[string]int{"id": 1}))
+			return
+		}
+	}))
+	defer server.Close()
+
+	cleanup := setupTestEnv(t, server.URL)
+	defer cleanup()
+
+	ProjectID = "test-project"
+	cmd := NewAddCommand()
+	var stdout bytes.Buffer
+	cmd.SetOut(&stdout)
+	cmd.SetArgs([]string{"Groceries", "25.50"})
+
+	err := cmd.Execute()
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	// Default should be "n"
+	if receivedBill["repeat"] != "n" {
+		t.Errorf("Default repeat should be 'n', got %s", receivedBill["repeat"])
+	}
+	// Output should NOT show repeat for default
+	if bytes.Contains(stdout.Bytes(), []byte("Repeat:")) {
+		t.Errorf("Output should not show repeat for default, got:\n%s", stdout.String())
 	}
 }

@@ -20,6 +20,7 @@ func resetEditFlags() {
 	editPaymentMethod = ""
 	editComment = ""
 	editDate = ""
+	editRepeat = ""
 }
 
 func TestNewEditCommand(t *testing.T) {
