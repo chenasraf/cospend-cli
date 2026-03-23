@@ -418,6 +418,22 @@ Removes the configuration file (stored credentials) and clears all cached data.
 
 ---
 
+### Diagnostics
+
+```bash
+cospend doctor
+```
+
+Runs health checks on your setup:
+
+- Config file exists and is readable
+- Required fields (domain, user, password) are set
+- Nextcloud server is reachable
+- Authentication credentials are valid
+- Default project (if configured) is accessible
+
+---
+
 ## Caching
 
 Project data (members, categories, payment methods, currencies) is cached locally to avoid repeated
