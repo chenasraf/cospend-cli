@@ -149,6 +149,11 @@ func getCacheHome() string {
 	return xdg.CacheHome
 }
 
+// GetCacheDir returns the cache directory path
+func GetCacheDir() string {
+	return filepath.Join(getCacheHome(), appName)
+}
+
 // getCachePath returns the cache file path for a project
 func getCachePath(projectID string) (string, error) {
 	cacheDir := filepath.Join(getCacheHome(), appName)

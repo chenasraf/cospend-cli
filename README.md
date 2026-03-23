@@ -408,6 +408,16 @@ cospend config get default-project
 
 ---
 
+### Logging Out
+
+```bash
+cospend logout
+```
+
+Removes the configuration file (stored credentials) and clears all cached data.
+
+---
+
 ## Caching
 
 Project data (members, categories, payment methods, currencies) is cached locally to avoid repeated
