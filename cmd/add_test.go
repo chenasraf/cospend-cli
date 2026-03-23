@@ -44,6 +44,14 @@ func resetFlags() {
 	paymentMethod = ""
 	comment = ""
 	addDate = ""
+	editName = ""
+	editAmount = ""
+	editCategory = ""
+	editPaidBy = ""
+	editPaidFor = nil
+	editPaymentMethod = ""
+	editComment = ""
+	editDate = ""
 	infoCached = false
 }
 

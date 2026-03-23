@@ -12,7 +12,7 @@ add and list expenses directly from your terminal without opening the web interf
 
 ## Features
 
-- **Add**, **list**, and **delete** expenses in Cospend projects via the **REST API**
+- **Add**, **edit**, **list**, and **delete** expenses in Cospend projects via the **REST API**
 - **List projects** you have access to
 - **Filter** expenses by payer, owed members, amount, name, category, payment method, or date
 - Resolve categories, payment methods, and members by **name or ID**
@@ -270,6 +270,48 @@ cospend list -p myproject --format json
 | `-h`  | `--help`       | Display help information                                       |
 
 The output includes the bill ID for each expense, which can be used with the delete command.
+
+---
+
+### Editing Expenses
+
+```bash
+cospend edit <bill_id> [flags]
+cospend update <bill_id> [flags]    # alias
+```
+
+Only the flags you specify will be updated; all other fields remain unchanged.
+
+#### Examples
+
+```bash
+# Update the name of a bill
+cospend edit 123 -p myproject -n "Updated name"
+
+# Update amount and category
+cospend edit 123 -p myproject -a 50.00 -c restaurant
+
+# Change who paid and who owes
+cospend edit 123 -p myproject -b alice -f bob -f charlie
+
+# Update the date and add a comment
+cospend edit 123 -p myproject -d 2026-06-15 -o "corrected date"
+```
+
+#### Edit Command Flags
+
+| Short | Long         | Description                                                            |
+| ----- | ------------ | ---------------------------------------------------------------------- |
+| `-p`  | `--project`  | Project ID (required)                                                  |
+| `-n`  | `--name`     | New name/description                                                   |
+| `-a`  | `--amount`   | New amount                                                             |
+| `-c`  | `--category` | Category by ID or case-insensitive name                                |
+| `-b`  | `--by`       | Paying member username                                                 |
+| `-f`  | `--for`      | Owed member username (repeatable)                                      |
+| `-m`  | `--method`   | Payment method by ID or case-insensitive name                          |
+| `-o`  | `--comment`  | Comment                                                                |
+| `-d`  | `--date`     | Date (`YYYY-MM-DD`, `MM-DD`, or relative like `-1d`, `+2w`)           |
+| `-h`  | `--help`     | Display help information                                               |
 
 ---
 

@@ -469,6 +469,58 @@ func (c *Client) GetUserInfo() (*UserInfo, error) {
 	return &userInfo, nil
 }
 
+// EditBill updates an existing bill in the project
+func (c *Client) EditBill(projectID string, billID int, bill Bill) error {
+	path := fmt.Sprintf("/ocs/v2.php/apps/cospend/api/v1/projects/%s/bills/%d", url.PathEscape(projectID), billID)
+
+	// Build form data
+	data := url.Values{}
+	data.Set("what", bill.What)
+	data.Set("amount", strconv.FormatFloat(bill.Amount, 'f', 2, 64))
+	data.Set("payer", strconv.Itoa(bill.PayerID))
+	data.Set("date", bill.Date)
+	data.Set("timestamp", strconv.FormatInt(time.Now().Unix(), 10))
+
+	// Format owed member IDs as comma-separated string
+	owedIDs := make([]string, len(bill.OwedTo))
+	for i, id := range bill.OwedTo {
+		owedIDs[i] = strconv.Itoa(id)
+	}
+	data.Set("payedFor", strings.Join(owedIDs, ","))
+
+	data.Set("comment", bill.Comment)
+	if bill.PaymentModeID != 0 {
+		data.Set("paymentModeId", strconv.Itoa(bill.PaymentModeID))
+	}
+	if bill.CategoryID != 0 {
+		data.Set("categoryId", strconv.Itoa(bill.CategoryID))
+	}
+
+	c.debugf("Request body: %s", data.Encode())
+
+	resp, err := c.doRequest("PUT", path, strings.NewReader(data.Encode()))
+	if err != nil {
+		return fmt.Errorf("editing bill: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("API returned status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var ocsResp OCSResponse
+	if err := json.NewDecoder(resp.Body).Decode(&ocsResp); err != nil {
+		return fmt.Errorf("decoding response: %w", err)
+	}
+
+	if ocsResp.OCS.Meta.StatusCode != 200 {
+		return fmt.Errorf("API error: %s", ocsResp.OCS.Meta.Message)
+	}
+
+	return nil
+}
+
 // DeleteBill deletes a bill from the project
 func (c *Client) DeleteBill(projectID string, billID int) error {
 	path := fmt.Sprintf("/ocs/v2.php/apps/cospend/api/v1/projects/%s/bills/%d", url.PathEscape(projectID), billID)

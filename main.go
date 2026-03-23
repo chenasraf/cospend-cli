@@ -25,6 +25,7 @@ func main() {
 	rootCmd.AddCommand(cmd.NewInitCommand())
 	rootCmd.AddCommand(cmd.NewListCommand())
 	rootCmd.AddCommand(cmd.NewDeleteCommand())
+	rootCmd.AddCommand(cmd.NewEditCommand())
 	rootCmd.AddCommand(cmd.NewProjectsCommand())
 	rootCmd.AddCommand(cmd.NewInfoCommand())
 
