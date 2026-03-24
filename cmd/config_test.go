@@ -351,6 +351,10 @@ func TestConfigListNoDefaultProject(t *testing.T) {
 	if bytes.Contains([]byte(output), []byte("default-project")) {
 		t.Errorf("Should not show default-project when not set, got: %s", output)
 	}
+	// Confirm settings should always show, even when false
+	if !bytes.Contains([]byte(output), []byte("confirm-add:     false")) {
+		t.Errorf("Should show confirm-add even when false, got: %s", output)
+	}
 }
 
 func TestConfigListNoConfigFile(t *testing.T) {
@@ -364,6 +368,125 @@ func TestConfigListNoConfigFile(t *testing.T) {
 	err := cmd.Execute()
 	if err == nil {
 		t.Error("Expected error when no config file exists")
+	}
+}
+
+func TestConfigSetConfirmAdd(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", tempDir)
+	t.Setenv("HOME", tempDir)
+
+	configDir := filepath.Join(tempDir, "cospend")
+	if err := os.MkdirAll(configDir, 0700); err != nil {
+		t.Fatalf("Failed to create config dir: %v", err)
+	}
+	configPath := filepath.Join(configDir, "cospend.json")
+	if err := os.WriteFile(configPath, []byte(`{"domain":"https://example.com","user":"alice","password":"pass"}`), 0600); err != nil {
+		t.Fatalf("Failed to write config: %v", err)
+	}
+
+	cmd := NewConfigCommand()
+	var stdout bytes.Buffer
+	cmd.SetOut(&stdout)
+	cmd.SetArgs([]string{"set", "confirm-add", "true"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	if !bytes.Contains(stdout.Bytes(), []byte("Set confirm-add = true")) {
+		t.Errorf("Expected success message, got: %s", stdout.String())
+	}
+
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("Failed to read config: %v", err)
+	}
+	if !bytes.Contains(data, []byte("confirm_add")) {
+		t.Errorf("Config should contain 'confirm_add', got: %s", string(data))
+	}
+}
+
+func TestConfigGetConfirmDelete(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", tempDir)
+	t.Setenv("HOME", tempDir)
+
+	configDir := filepath.Join(tempDir, "cospend")
+	if err := os.MkdirAll(configDir, 0700); err != nil {
+		t.Fatalf("Failed to create config dir: %v", err)
+	}
+	configPath := filepath.Join(configDir, "cospend.json")
+	if err := os.WriteFile(configPath, []byte(`{"domain":"https://example.com","user":"alice","password":"pass","confirm_delete":true}`), 0600); err != nil {
+		t.Fatalf("Failed to write config: %v", err)
+	}
+
+	cmd := NewConfigCommand()
+	var stdout bytes.Buffer
+	cmd.SetOut(&stdout)
+	cmd.SetArgs([]string{"get", "confirm-delete"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	if !bytes.Contains(stdout.Bytes(), []byte("true")) {
+		t.Errorf("Expected 'true', got: %s", stdout.String())
+	}
+}
+
+func TestConfigSetConfirmInvalidBool(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", tempDir)
+	t.Setenv("HOME", tempDir)
+
+	configDir := filepath.Join(tempDir, "cospend")
+	if err := os.MkdirAll(configDir, 0700); err != nil {
+		t.Fatalf("Failed to create config dir: %v", err)
+	}
+	configPath := filepath.Join(configDir, "cospend.json")
+	if err := os.WriteFile(configPath, []byte(`{"domain":"x","user":"u","password":"p"}`), 0600); err != nil {
+		t.Fatalf("Failed to write config: %v", err)
+	}
+
+	cmd := NewConfigCommand()
+	cmd.SetArgs([]string{"set", "confirm-add", "notabool"})
+
+	if err := cmd.Execute(); err == nil {
+		t.Error("Expected error for invalid boolean value")
+	}
+}
+
+func TestConfigListShowsConfirmations(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", tempDir)
+	t.Setenv("HOME", tempDir)
+
+	configDir := filepath.Join(tempDir, "cospend")
+	if err := os.MkdirAll(configDir, 0700); err != nil {
+		t.Fatalf("Failed to create config dir: %v", err)
+	}
+	configPath := filepath.Join(configDir, "cospend.json")
+	configContent := `{"domain":"https://example.com","user":"alice","password":"pass","confirm_add":true,"confirm_delete":true}`
+	if err := os.WriteFile(configPath, []byte(configContent), 0600); err != nil {
+		t.Fatalf("Failed to write config: %v", err)
+	}
+
+	cmd := NewConfigCommand()
+	var stdout bytes.Buffer
+	cmd.SetOut(&stdout)
+	cmd.SetArgs([]string{"list"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	output := stdout.String()
+	if !bytes.Contains([]byte(output), []byte("confirm-add")) {
+		t.Errorf("Should show confirm-add, got: %s", output)
+	}
+	if !bytes.Contains([]byte(output), []byte("confirm-delete")) {
+		t.Errorf("Should show confirm-delete, got: %s", output)
 	}
 }
 

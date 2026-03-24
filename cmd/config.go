@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/chenasraf/cospend-cli/internal/config"
 	"github.com/spf13/cobra"
@@ -32,11 +33,15 @@ Supported keys:
   domain             Nextcloud instance URL
   user               Nextcloud username
   default-project    Default project ID (used when -p is not specified)
+  confirm-add        Ask for confirmation before adding (true/false)
+  confirm-delete     Ask for confirmation before deleting (true/false)
+  confirm-update     Ask for confirmation before updating (true/false)
 
 Examples:
   cospend config set domain https://cloud.example.com
   cospend config set user alice
-  cospend config set default-project myproject`,
+  cospend config set default-project myproject
+  cospend config set confirm-delete true`,
 		Args: cobra.ExactArgs(2),
 		RunE: runConfigSet,
 	}
@@ -52,11 +57,15 @@ Supported keys:
   domain             Nextcloud instance URL
   user               Nextcloud username
   default-project    Default project ID (used when -p is not specified)
+  confirm-add        Ask for confirmation before adding (true/false)
+  confirm-delete     Ask for confirmation before deleting (true/false)
+  confirm-update     Ask for confirmation before updating (true/false)
 
 Examples:
   cospend config get domain
   cospend config get user
-  cospend config get default-project`,
+  cospend config get default-project
+  cospend config get confirm-delete`,
 		Args: cobra.ExactArgs(1),
 		RunE: runConfigGet,
 	}
@@ -106,6 +115,9 @@ func runConfigList(cmd *cobra.Command, _ []string) error {
 	if cfg.DefaultProject != "" {
 		_, _ = fmt.Fprintf(out, "  default-project: %s\n", cfg.DefaultProject)
 	}
+	_, _ = fmt.Fprintf(out, "  confirm-add:     %v\n", cfg.ConfirmAdd)
+	_, _ = fmt.Fprintf(out, "  confirm-delete:  %v\n", cfg.ConfirmDelete)
+	_, _ = fmt.Fprintf(out, "  confirm-update:  %v\n", cfg.ConfirmUpdate)
 
 	return nil
 }
@@ -133,6 +145,24 @@ func runConfigSet(cmd *cobra.Command, args []string) error {
 		cfg.User = value
 	case "default-project":
 		cfg.DefaultProject = value
+	case "confirm-add":
+		b, err := strconv.ParseBool(value)
+		if err != nil {
+			return fmt.Errorf("invalid boolean value: %s (use true or false)", value)
+		}
+		cfg.ConfirmAdd = b
+	case "confirm-delete":
+		b, err := strconv.ParseBool(value)
+		if err != nil {
+			return fmt.Errorf("invalid boolean value: %s (use true or false)", value)
+		}
+		cfg.ConfirmDelete = b
+	case "confirm-update":
+		b, err := strconv.ParseBool(value)
+		if err != nil {
+			return fmt.Errorf("invalid boolean value: %s (use true or false)", value)
+		}
+		cfg.ConfirmUpdate = b
 	default:
 		return fmt.Errorf("unknown config key: %s", key)
 	}
@@ -168,6 +198,12 @@ func runConfigGet(cmd *cobra.Command, args []string) error {
 		value = cfg.User
 	case "default-project":
 		value = cfg.DefaultProject
+	case "confirm-add":
+		value = strconv.FormatBool(cfg.ConfirmAdd)
+	case "confirm-delete":
+		value = strconv.FormatBool(cfg.ConfirmDelete)
+	case "confirm-update":
+		value = strconv.FormatBool(cfg.ConfirmUpdate)
 	default:
 		return fmt.Errorf("unknown config key: %s", key)
 	}

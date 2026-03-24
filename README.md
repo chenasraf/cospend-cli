@@ -20,6 +20,7 @@ add and list expenses directly from your terminal without opening the web interf
 - **Currency code support** (e.g., `usd`, `eur`, `gbp`) with automatic symbol resolution
 - **Local caching** of project data with 1-hour TTL for faster subsequent calls
 - **Default project** - set once with `config set`, no need to pass `-p` every time
+- **Optional confirmations** - preview and confirm before adding, deleting, or updating expenses
 - **Global project flag** - set `-p` before the command for easy shell aliases
 - **Secure browser login** - OAuth-style authentication with 2FA support
 - Cross-platform support: **macOS**, **Linux**, and **Windows**
@@ -204,18 +205,18 @@ cospend add "Gym" 50.00 -p myproject -r w               # weekly
 
 #### Add Command Flags
 
-| Short | Long         | Description                                               |
-| ----- | ------------ | --------------------------------------------------------- |
-| `-p`  | `--project`  | Project ID (required)                                     |
-| `-c`  | `--category` | Category by ID or case-insensitive name                   |
-| `-b`  | `--by`       | Paying member username (defaults to authenticated user)   |
-| `-f`  | `--for`      | Owed member username (repeatable; defaults to payer only) |
-| `-C`  | `--convert`  | Currency to convert to (by ID, name, or code like `usd`)  |
-| `-m`  | `--method`   | Payment method by ID or case-insensitive name             |
-| `-o`  | `--comment`  | Additional details about the bill                         |
-| `-d`  | `--date`     | Date of expense (`YYYY-MM-DD`, `MM-DD`, or relative like `-1d`, `+2w`) |
+| Short | Long         | Description                                                                                                  |
+| ----- | ------------ | ------------------------------------------------------------------------------------------------------------ |
+| `-p`  | `--project`  | Project ID (required)                                                                                        |
+| `-c`  | `--category` | Category by ID or case-insensitive name                                                                      |
+| `-b`  | `--by`       | Paying member username (defaults to authenticated user)                                                      |
+| `-f`  | `--for`      | Owed member username (repeatable; defaults to payer only)                                                    |
+| `-C`  | `--convert`  | Currency to convert to (by ID, name, or code like `usd`)                                                     |
+| `-m`  | `--method`   | Payment method by ID or case-insensitive name                                                                |
+| `-o`  | `--comment`  | Additional details about the bill                                                                            |
+| `-d`  | `--date`     | Date of expense (`YYYY-MM-DD`, `MM-DD`, or relative like `-1d`, `+2w`)                                       |
 | `-r`  | `--repeat`   | Repeat frequency: `d` (daily), `w` (weekly), `b` (biweekly), `s` (semi-monthly), `m` (monthly), `y` (yearly) |
-| `-h`  | `--help`     | Display help information                                  |
+| `-h`  | `--help`     | Display help information                                                                                     |
 
 ---
 
@@ -318,19 +319,19 @@ cospend edit 123 -p myproject -d 2026-06-15 -o "corrected date"
 
 #### Edit Command Flags
 
-| Short | Long         | Description                                                            |
-| ----- | ------------ | ---------------------------------------------------------------------- |
-| `-p`  | `--project`  | Project ID (required)                                                  |
-| `-n`  | `--name`     | New name/description                                                   |
-| `-a`  | `--amount`   | New amount                                                             |
-| `-c`  | `--category` | Category by ID or case-insensitive name                                |
-| `-b`  | `--by`       | Paying member username                                                 |
-| `-f`  | `--for`      | Owed member username (repeatable)                                      |
-| `-m`  | `--method`   | Payment method by ID or case-insensitive name                          |
-| `-o`  | `--comment`  | Comment                                                                |
-| `-d`  | `--date`     | Date (`YYYY-MM-DD`, `MM-DD`, or relative like `-1d`, `+2w`)           |
+| Short | Long         | Description                                                                                                              |
+| ----- | ------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `-p`  | `--project`  | Project ID (required)                                                                                                    |
+| `-n`  | `--name`     | New name/description                                                                                                     |
+| `-a`  | `--amount`   | New amount                                                                                                               |
+| `-c`  | `--category` | Category by ID or case-insensitive name                                                                                  |
+| `-b`  | `--by`       | Paying member username                                                                                                   |
+| `-f`  | `--for`      | Owed member username (repeatable)                                                                                        |
+| `-m`  | `--method`   | Payment method by ID or case-insensitive name                                                                            |
+| `-o`  | `--comment`  | Comment                                                                                                                  |
+| `-d`  | `--date`     | Date (`YYYY-MM-DD`, `MM-DD`, or relative like `-1d`, `+2w`)                                                              |
 | `-r`  | `--repeat`   | Repeat frequency: `n` (none), `d` (daily), `w` (weekly), `b` (biweekly), `s` (semi-monthly), `m` (monthly), `y` (yearly) |
-| `-h`  | `--help`     | Display help information                                               |
+| `-h`  | `--help`     | Display help information                                                                                                 |
 
 ---
 
@@ -392,9 +393,12 @@ cospend config get <key>
 
 #### Supported Keys
 
-| Key                 | Description                                        |
-| ------------------- | -------------------------------------------------- |
-| `default-project`   | Default project ID (used when `-p` is not specified) |
+| Key               | Description                                           | Default |
+| ----------------- | ----------------------------------------------------- | ------- |
+| `default-project` | Default project ID (used when `-p` is not specified)  | (none)  |
+| `confirm-add`     | Ask for confirmation before adding (`true`/`false`)   | `false` |
+| `confirm-delete`  | Ask for confirmation before deleting (`true`/`false`) | `false` |
+| `confirm-update`  | Ask for confirmation before updating (`true`/`false`) | `false` |
 
 #### Examples
 
@@ -404,6 +408,12 @@ cospend config set default-project myproject
 
 # View the current default project
 cospend config get default-project
+
+# Enable confirmation before deleting
+cospend config set confirm-delete true
+
+# Show all current settings
+cospend config list
 ```
 
 ---

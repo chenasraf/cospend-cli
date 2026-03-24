@@ -31,6 +31,9 @@ type Config struct {
 	User           string `json:"user" yaml:"user" toml:"user"`
 	Password       string `json:"password" yaml:"password" toml:"password"`
 	DefaultProject string `json:"default_project,omitempty" yaml:"default_project,omitempty" toml:"default_project,omitempty"`
+	ConfirmAdd     bool   `json:"confirm_add,omitempty" yaml:"confirm_add,omitempty" toml:"confirm_add,omitempty"`
+	ConfirmDelete  bool   `json:"confirm_delete,omitempty" yaml:"confirm_delete,omitempty" toml:"confirm_delete,omitempty"`
+	ConfirmUpdate  bool   `json:"confirm_update,omitempty" yaml:"confirm_update,omitempty" toml:"confirm_update,omitempty"`
 }
 
 // configExtensions lists supported config file extensions in order of preference
@@ -239,6 +242,15 @@ password = %q
 `, cfg.Domain, cfg.User, cfg.Password)
 	if cfg.DefaultProject != "" {
 		content += fmt.Sprintf("default_project = %q\n", cfg.DefaultProject)
+	}
+	if cfg.ConfirmAdd {
+		content += "confirm_add = true\n"
+	}
+	if cfg.ConfirmDelete {
+		content += "confirm_delete = true\n"
+	}
+	if cfg.ConfirmUpdate {
+		content += "confirm_update = true\n"
 	}
 	return []byte(content), nil
 }

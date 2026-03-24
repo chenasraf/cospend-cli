@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -195,11 +196,6 @@ func runEdit(cmd *cobra.Command, args []string) error {
 		bill.Repeat = editRepeat
 	}
 
-	// Edit the bill
-	if err := client.EditBill(ProjectID, billID, bill); err != nil {
-		return fmt.Errorf("editing bill: %w", err)
-	}
-
 	// Fetch user info for locale-aware formatting
 	locale := "en_US"
 	userInfo, ok := cache.LoadUserInfo()
@@ -217,38 +213,58 @@ func runEdit(cmd *cobra.Command, args []string) error {
 
 	formatter := format.NewAmountFormatter(locale, project.CurrencyName)
 	out := cmd.OutOrStdout()
+
+	printBillSummary := func() {
+		_, _ = fmt.Fprintf(out, "  Name:     %s\n", bill.What)
+		_, _ = fmt.Fprintf(out, "  Amount:   %s\n", formatter.Format(bill.Amount))
+		_, _ = fmt.Fprintf(out, "  Date:     %s\n", bill.Date)
+		_, _ = fmt.Fprintf(out, "  Paid by:  %s\n", memberNames[bill.PayerID])
+		var owerNames []string
+		for _, id := range bill.OwedTo {
+			owerNames = append(owerNames, memberNames[id])
+		}
+		_, _ = fmt.Fprintf(out, "  Paid for: %s\n", strings.Join(owerNames, ", "))
+		if bill.CategoryID != 0 {
+			for _, c := range project.Categories {
+				if c.ID == bill.CategoryID {
+					_, _ = fmt.Fprintf(out, "  Category: %s\n", c.Name)
+					break
+				}
+			}
+		}
+		if bill.PaymentModeID != 0 {
+			for _, pm := range project.PaymentModes {
+				if pm.ID == bill.PaymentModeID {
+					_, _ = fmt.Fprintf(out, "  Method:   %s\n", pm.Name)
+					break
+				}
+			}
+		}
+		if bill.Comment != "" {
+			_, _ = fmt.Fprintf(out, "  Comment:  %s\n", bill.Comment)
+		}
+		if bill.Repeat != "" && bill.Repeat != "n" {
+			_, _ = fmt.Fprintf(out, "  Repeat:   %s\n", api.ValidRepeatFrequencies[bill.Repeat])
+		}
+	}
+
+	// Confirm if configured
+	if cfg.ConfirmUpdate {
+		_, _ = fmt.Fprintf(out, "Update bill #%d:\n", billID)
+		printBillSummary()
+		if !confirm(os.Stdin, out, "Update bill?") {
+			_, _ = fmt.Fprintln(out, "Cancelled.")
+			return nil
+		}
+	}
+
+	// Edit the bill
+	if err := client.EditBill(ProjectID, billID, bill); err != nil {
+		return fmt.Errorf("editing bill: %w", err)
+	}
+
 	_, _ = fmt.Fprintf(out, "Updated bill #%d\n", billID)
-	_, _ = fmt.Fprintf(out, "  Name:     %s\n", bill.What)
-	_, _ = fmt.Fprintf(out, "  Amount:   %s\n", formatter.Format(bill.Amount))
-	_, _ = fmt.Fprintf(out, "  Date:     %s\n", bill.Date)
-	_, _ = fmt.Fprintf(out, "  Paid by:  %s\n", memberNames[bill.PayerID])
-	var owerNames []string
-	for _, id := range bill.OwedTo {
-		owerNames = append(owerNames, memberNames[id])
-	}
-	_, _ = fmt.Fprintf(out, "  Paid for: %s\n", strings.Join(owerNames, ", "))
-	if bill.CategoryID != 0 {
-		for _, c := range project.Categories {
-			if c.ID == bill.CategoryID {
-				_, _ = fmt.Fprintf(out, "  Category: %s\n", c.Name)
-				break
-			}
-		}
-	}
-	if bill.PaymentModeID != 0 {
-		for _, pm := range project.PaymentModes {
-			if pm.ID == bill.PaymentModeID {
-				_, _ = fmt.Fprintf(out, "  Method:   %s\n", pm.Name)
-				break
-			}
-		}
-	}
-	if bill.Comment != "" {
-		_, _ = fmt.Fprintf(out, "  Comment:  %s\n", bill.Comment)
-	}
-	if bill.Repeat != "" && bill.Repeat != "n" {
-		_, _ = fmt.Fprintf(out, "  Repeat:   %s\n", api.ValidRepeatFrequencies[bill.Repeat])
-	}
+	printBillSummary()
 
 	return nil
 }
