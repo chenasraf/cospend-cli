@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/chenasraf/cospend-cli/compare/v1.7.0...v1.8.0) (2026-03-24)
+
+
+### Features
+
+* add action confirmations ([66173d9](https://github.com/chenasraf/cospend-cli/commit/66173d9ff02e5595e03fc8f285281f5801011917))
+
 ## [1.7.0](https://github.com/chenasraf/cospend-cli/compare/v1.6.0...v1.7.0) (2026-03-23)
 
 
