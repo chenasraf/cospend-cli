@@ -64,6 +64,7 @@ func setupTestEnv(t *testing.T, domain string) func() {
 	resetFlags()
 
 	// Set test env vars (t.Setenv auto-restores after test)
+	isolateConfig(t)
 	t.Setenv("NEXTCLOUD_DOMAIN", domain)
 	t.Setenv("NEXTCLOUD_USER", "testuser")
 	t.Setenv("NEXTCLOUD_PASSWORD", "testpass")

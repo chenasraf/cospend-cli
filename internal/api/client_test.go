@@ -20,6 +20,7 @@ func TestNewClient(t *testing.T) {
 
 	if client == nil {
 		t.Fatal("NewClient() returned nil")
+		return
 	}
 	if client.config != cfg {
 		t.Error("NewClient() config not set correctly")
@@ -241,6 +242,9 @@ func TestCreateBill(t *testing.T) {
 				if r.FormValue("payedFor") != "1,2" {
 					t.Errorf("Wrong payedFor: %s", r.FormValue("payedFor"))
 				}
+				if r.FormValue("date") != "2024-01-15" {
+					t.Errorf("Wrong date: %s", r.FormValue("date"))
+				}
 				if r.FormValue("comment") != "Test comment" {
 					t.Errorf("Wrong comment: %s", r.FormValue("comment"))
 				}
@@ -344,6 +348,11 @@ func TestCreateBill(t *testing.T) {
 				// Verify common headers
 				if r.Header.Get("OCS-APIRequest") != "true" {
 					t.Error("Missing OCS-APIRequest header")
+				}
+
+				_ = r.ParseForm()
+				if got, ok := r.Form["timestamp"]; ok {
+					t.Errorf("Request must not send timestamp, got %v", got)
 				}
 
 				if tt.checkRequest != nil {

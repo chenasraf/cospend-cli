@@ -100,6 +100,7 @@ func TestEditCommandInvalidBillID(t *testing.T) {
 	}))
 	defer server.Close()
 
+	isolateConfig(t)
 	t.Setenv("NEXTCLOUD_DOMAIN", server.URL)
 	t.Setenv("NEXTCLOUD_USER", "testuser")
 	t.Setenv("NEXTCLOUD_PASSWORD", "testpass")

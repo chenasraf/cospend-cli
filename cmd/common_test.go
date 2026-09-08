@@ -6,6 +6,17 @@ import (
 	"testing"
 )
 
+// isolateConfig points config lookup at an empty directory so a config file on
+// the machine running the tests can't feed settings (such as the confirm_*
+// flags, which have no env var override) into the command under test.
+func isolateConfig(t *testing.T) {
+	t.Helper()
+
+	configHome := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", configHome)
+	t.Setenv("HOME", configHome)
+}
+
 func TestConfirm(t *testing.T) {
 	tests := []struct {
 		name   string
