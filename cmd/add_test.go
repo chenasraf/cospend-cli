@@ -584,6 +584,9 @@ func TestAddCommandWithDate(t *testing.T) {
 	if receivedBill["date"] != "2026-06-15" {
 		t.Errorf("Wrong date: got %s, want 2026-06-15", receivedBill["date"])
 	}
+	if ts, ok := receivedBill["timestamp"]; ok {
+		t.Errorf("Request must not send timestamp, got %s", ts)
+	}
 	if !bytes.Contains(stdout.Bytes(), []byte("Date:     2026-06-15")) {
 		t.Errorf("Output should show date, got:\n%s", stdout.String())
 	}
