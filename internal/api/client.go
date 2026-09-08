@@ -357,7 +357,6 @@ func (c *Client) CreateBill(projectID string, bill Bill) error {
 	data.Set("amount", strconv.FormatFloat(bill.Amount, 'f', 2, 64))
 	data.Set("payer", strconv.Itoa(bill.PayerID))
 	data.Set("date", bill.Date)
-	data.Set("timestamp", strconv.FormatInt(time.Now().Unix(), 10))
 	repeat := bill.Repeat
 	if repeat == "" {
 		repeat = "n"
