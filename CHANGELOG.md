@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.1](https://github.com/chenasraf/cospend-cli/compare/v1.8.0...v1.8.1) (2026-09-08)
+
+
+### Bug Fixes
+
+* remove timestamp field from createBill ([#12](https://github.com/chenasraf/cospend-cli/issues/12)) ([4eb5217](https://github.com/chenasraf/cospend-cli/commit/4eb5217e36c3b8a8bce89f5d6d4ad6f860f75e9a))
+
 ## [1.8.0](https://github.com/chenasraf/cospend-cli/compare/v1.7.0...v1.8.0) (2026-03-24)
 
 
