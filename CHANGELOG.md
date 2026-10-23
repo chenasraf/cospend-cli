@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.2](https://github.com/chenasraf/cospend-cli/compare/v1.8.1...v1.8.2) (2026-10-23)
+
+
+### Bug Fixes
+
+* **deps:** require go 1.26.10 ([df241e0](https://github.com/chenasraf/cospend-cli/commit/df241e01bb3512394670029dd90f3364c2f0a4c2))
+* **deps:** require go 1.27.3 ([b459293](https://github.com/chenasraf/cospend-cli/commit/b4592939c3ee51c9a74dedeac42c08d7df608fdd))
+
 ## [1.8.1](https://github.com/chenasraf/cospend-cli/compare/v1.8.0...v1.8.1) (2026-09-08)
 
 
